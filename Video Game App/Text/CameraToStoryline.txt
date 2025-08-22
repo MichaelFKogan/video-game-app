@@ -1,0 +1,46 @@
+//
+//  CameraToStoryline.txt.swift
+//  Video Game App
+//
+//  Created by Mike K on 8/18/25.
+//
+
+https://chatgpt.com/c/68a56633-fdc0-8322-a96e-97aa1fe93a52
+
+// Camera to Storyline Feed
+
+In my CameraButtonView, when the user takes a photo with the camera, or selects a photo from their library, and presses the Accept Photo Button, that photo is sent to the Runware.ai API.
+
+That photo is transformed into a video game image by the Runware API, and returned in JSON as a URL.
+
+I will need to save that image to storage or my database, and connect it to the user, so that when they return to the website, their images will be loaded from the database.
+
+I believe I will need to create the photos table. You can see the potential schema below.
+
+Each image will contain a variety of information, user-generated title, description, if the image is public or not, xp points, other types of points, as well as information I'm nott sure about yet but will probably be adding to it later
+
+Step 2: Set Up Database Tables
+    Create tables in Supabase:
+
+    users table
+
+    id → uuid (matches Supabase Auth ID)
+    username
+    profilePhotoURL
+
+    photos table
+
+    id
+    user_id → links to users table
+    image_url
+    is_public → boolean
+    created_at
+    description
+
+I also need to take that converted response image, and display it on the GalleryView() page.
+
+How can I get started setting this up?
+
+I'm not sure how to do any of this or if and how I should use Supabase storage.
+
+Do you need to see my code?

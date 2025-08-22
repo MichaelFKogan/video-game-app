@@ -1,0 +1,126 @@
+//
+//  ChatGPT.txt
+//  Video Game App
+//
+//  Created by Mike K on 8/18/25.
+//
+
+
+First Steps
+✅ Authentication
+Upload + Storage
+Private feed
+
+Once that works, add Runware.ai integration and Public feed.
+Then layer on likes/comments and other features.
+
+// Integrating Firebase and Supabase
+// User Sign Up And Login
+https://chatgpt.com/c/68a35bb1-d848-832c-af31-fb27e4b494bf
+
+I'm creating a IOS Swift app that will be using either Supabase or Firebase to allow a user to...
+
+    Sign Up or LogIn to the app,
+    Upload their photos or take photos inside the app,
+    Their photos are sent to Runware.ai API and transformed into video game style images,
+    The response photos are saved to the Supabase/Firebase database,
+    And shown on the user's screen in their feed section.
+    There will also be a Public Feed section or Wall, like Instagram, where users can see, like and comment on the photos of other users.
+
+    Without writing any code, how would I get started building this?
+
+
+// ---
+
+I guess what I''m most concerned about is dealing with all the Supabase integration. And specifically the database. Meaning connecting a single user's photos to their profile or credentials so that when they log in they only see their own private content.
+
+// ---
+
+Another concern is that the Public feed should be visible by everyone, so if you download the app, you would see the public feed, but the Camera and Personal feed would be met with a Sign Up or Log In screen.
+                                                                                
+                                                                                
+// ---
+                                                                                
+So how would I even get started building this? Where would I begin?
+                                                                                
+// ---
+
+Step 1: Set Up Authentication
+    - Create Sign Up and Login screens in SwiftUI.
+    - Implement authentication with Supabase Auth SDK.
+    - Test logging in and logging out; ensure you can retrieve the user’s unique uuid.
+    - Tip: This is the foundation — every private photo will be tied to this uuid.
+
+Step 2: Set Up Database Tables
+    Create tables in Supabase:
+
+    users table
+
+    id → uuid (matches Supabase Auth ID)
+    username
+    profilePhotoURL
+
+    photos table
+
+    id
+    user_id → links to users table
+    image_url
+    is_public → boolean
+    created_at
+    description
+
+    Add row-level security so users only see their own private images, while public images are visible to all.
+
+Step 3: Set Up Storage
+    Create a bucket for user images in Supabase Storage.
+    Test uploading an image via the Supabase SDK.
+    Make sure you can get a URL for the stored image.
+    Apply policies for private vs public files.
+
+Step 4: Build Camera / Upload UI
+    Upload the photo to Supabase Storage.
+    Save a record in the photos table with the current user_id and is_public flag.
+    Receive the transformed image and save it back to storage.
+    Update the database record with the new image URL (or create a new post).
+                            
+Step 7: Build Feeds
+    Public Feed
+    Query photos WHERE is_public = true
+    Display in a scrollable SwiftUI feed
+    Optional: allow likes/comments (require login to interact)
+    Personal Feed
+    Require login
+    Query photos WHERE user_id = current_user_id
+    Show only their private uploads
+
+Step 8: Like / Comment System
+    Create likes and comments tables (linked by post_id and user_id).
+    Update feed UI to allow liking and commenting.
+    Optional: add real-time updates with Supabase subscriptions.
+
+
+// ---
+
+For this part of the setup...
+
+I will be adding more content in the future which will be needed to add to the data base like user-added Photo Titles, Photo Descriptions, and also public comments, public likes, etc.
+
+Step 2: Set Up Database Tables
+    Create tables in Supabase:
+
+    users table
+
+    id → uuid (matches Supabase Auth ID)
+    username
+    profilePhotoURL
+
+    photos table
+
+    id
+    user_id → links to users table
+    image_url
+    is_public → boolean
+    created_at
+    description
+
+    Add row-level security so users only see their own private images, while public images are visible to all.

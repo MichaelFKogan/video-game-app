@@ -1,0 +1,2 @@
+
+Now that I've got Authentication working, I want the user to be able to create a profile, and I want their profile data saved in Supabase storage, so that whenever they Log back into the website, their user profile will be shown.
