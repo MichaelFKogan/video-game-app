@@ -7,12 +7,26 @@ struct CameraButtonView: View {
     @StateObject private var cameraService = CameraService()
     @State private var selectedUIImage: UIImage?
     @State private var showLibraryPicker = false
+    @EnvironmentObject var galleryViewModel: GalleryViewModel
+    @EnvironmentObject var notificationManager: GlobalNotificationManager
     
     // 1️⃣ Add a state variable for selected tags
     @State private var selectedTag: String? = nil
+    
+    // 2️⃣ Add state variable for selected animated style
+    @State private var selectedStyle: String = "Pixel Art"
 
     // 2️⃣ Your tags array
     let tags = ["📓 Daily Journal", "⚔️ Quests", "🥪 Rations", "🗺️ Map", "📦 Inventory"]
+    
+    // 3️⃣ Animated style options with pricing
+    let styleOptions = [
+        ("Pixel Art", "$0.03", "🎮", "Classic 8-bit pixel art style"),
+        ("Anime", "$0.15", "🌸", "Japanese anime aesthetic"),
+        ("Watercolor", "$0.08", "🎨", "Soft watercolor painting style"),
+        ("Cyberpunk", "$0.12", "🤖", "Futuristic neon aesthetic"),
+        ("Fantasy", "$0.10", "🐉", "Magical fantasy world style")
+    ]
 
     var body: some View {
         NavigationView {
@@ -84,11 +98,23 @@ struct CameraButtonView: View {
                         // SEND TO API
                             Button {
                                 guard let raw = cameraService.capturedImage else { return }
+                                
+                                // Generate a unique ID for this photo upload
+                                let photoId = UUID().uuidString
+                                
+                                // Add loading placeholder to gallery
+                                galleryViewModel.addLoadingPhoto(photoId)
+                                
+                                // Show global transforming notification
+                                notificationManager.showTransformingNotification(for: photoId)
 
                                 // Make pixels upright and portrait before sending
                                 let normalized = raw.normalizedOrientation()
                                 let portrait = normalized.centerCropped(toAspect: 3.0/4.0) // choose 9/16, 2/3, etc.
                                 let finalImage = portrait.resized(maxLongSide: 1536)        // optional but tidy
+                                
+                                // Reset camera to live preview immediately for better UX
+                                cameraService.capturedImage = nil
                                 
                                 let runwareAPI = RunwareAPI()
                                 
@@ -100,6 +126,10 @@ struct CameraButtonView: View {
                                             
                                             guard let runwareURL = URL(string: runwareURLString) else {
                                                 print("❌ Invalid URL string from Runware")
+                                                Task { @MainActor in
+                                                    galleryViewModel.removeLoadingPhoto(photoId)
+                                                    notificationManager.showErrorNotification("Invalid response from API", for: photoId)
+                                                }
                                                 return
                                             }
                                             
@@ -112,14 +142,30 @@ struct CameraButtonView: View {
                                                         description: selectedTag ?? "Untitled"
                                                     )
                                                     print("✅ Uploaded & saved. Signed URL: \(signedURL)")
-                                                    // 👉 later you can push signedURL into your Gallery view model
+                                                    
+                                                    // Update GalleryViewModel immediately
+                                                    await galleryViewModel.refreshFromSupabase()
+                                                    
+                                                    // Remove loading placeholder and show success
+                                                    await MainActor.run {
+                                                        galleryViewModel.removeLoadingPhoto(photoId)
+                                                        notificationManager.showSuccessNotification(for: photoId)
+                                                    }
                                                 } catch {
                                                     print("❌ Supabase upload failed: \(error)")
+                                                    await MainActor.run {
+                                                        galleryViewModel.removeLoadingPhoto(photoId)
+                                                        notificationManager.showErrorNotification(error.localizedDescription, for: photoId)
+                                                    }
                                                 }
                                             }
                                             
                                         case .failure(let error):
                                             print("❌ Runware error: \(error.localizedDescription)")
+                                            Task { @MainActor in
+                                                galleryViewModel.removeLoadingPhoto(photoId)
+                                                notificationManager.showErrorNotification(error.localizedDescription, for: photoId)
+                                            }
                                         }
                                     }
                                 }
@@ -157,6 +203,37 @@ struct CameraButtonView: View {
                     
                 }
                 .padding(.horizontal)
+                .padding(.vertical, 8)
+                
+                Divider()
+                
+                // Animated Style Selection Section
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Choose Style")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(styleOptions, id: \.0) { style in
+                                StyleSelectionButton(
+                                    title: style.0,
+                                    price: style.1,
+                                    icon: style.2,
+                                    description: style.3,
+                                    isSelected: selectedStyle == style.0
+                                ) {
+                                    selectedStyle = style.0
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
                 .padding(.vertical, 8)
                 
                 Divider()
@@ -211,5 +288,60 @@ struct CameraButtonView: View {
                 PhotoLibraryPickerView(isPresented: $showLibraryPicker, selectedImage: $cameraService.capturedImage)
             }
         }
+    }
+}
+
+// MARK: - Style Selection Button
+struct StyleSelectionButton: View {
+    let title: String
+    let price: String
+    let icon: String
+    let description: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(icon)
+                        .font(.title2)
+                    Spacer()
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.title3)
+                    }
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(isSelected ? .white : .primary)
+                    
+                    Text(description)
+                        .font(.caption)
+                        .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
+                        .lineLimit(2)
+                    
+                    Text(price)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(isSelected ? .white : .accentColor)
+                }
+            }
+            .padding(12)
+            .frame(width: 140, height: 100)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.accentColor : Color(UIColor.systemGray6))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }

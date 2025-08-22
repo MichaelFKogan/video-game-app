@@ -3,6 +3,8 @@ import SwiftUI
 struct ContentView: View {
     
     @StateObject private var session = SessionStore()
+    @StateObject private var galleryViewModel = GalleryViewModel(client: supabase)
+    @StateObject private var notificationManager = GlobalNotificationManager()
 
     @AppStorage("isDarkMode") private var isDarkMode = true
     @AppStorage("accentColorName") private var accentColorName: String = "blue"
@@ -13,6 +15,9 @@ struct ContentView: View {
     var body: some View {
 
         ZStack {
+            // Global notification overlay
+            GlobalNotificationView(notificationManager: notificationManager)
+            
             TabView(selection: $selectedTab) {
                 
 //            // 🏠 Home
@@ -38,6 +43,7 @@ struct ContentView: View {
                 AuthGuard {
 //                    DailyEntries()
                     GalleryView()
+                        .environmentObject(galleryViewModel)
                 }
                     .tabItem {Label("Storyline", systemImage: "book.closed")}
                     .tag(0)
@@ -45,6 +51,8 @@ struct ContentView: View {
             // 📷 Camera
                 AuthGuard {
                     CameraButtonView()
+                        .environmentObject(galleryViewModel)
+                        .environmentObject(notificationManager)
                 }
                 .environmentObject(session)
                     .tabItem { Label("Camera", systemImage: "camera") }

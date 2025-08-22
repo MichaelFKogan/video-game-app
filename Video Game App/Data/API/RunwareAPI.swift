@@ -48,7 +48,10 @@ class RunwareAPI {
                 
                 "model": "bytedance:4@1", // 👈 change if you want a different model
                 
-                "positivePrompt": "Convert this image to a stylized Grand Theft Auto game art. Keep all facial features, hair style and color, clothing, pose, and background exactly the same. Only transform the rendering style to GTA: cinematic lighting, slightly desaturated colors, and stylized textures typical of GTA art. Preserve proportions, perspective, and all character details exactly.",
+//                "positivePrompt": "Convert this image to a stylized Grand Theft Auto game art. Keep all facial features, hair style and color, clothing, pose, and background exactly the same. Only transform the rendering style to GTA: cinematic lighting, slightly desaturated colors, and stylized textures typical of GTA art. Preserve proportions, perspective, and all character details exactly.",
+                
+                "positivePrompt": "Convert this image to a stylized Grand Theft Auto game art. Preserve the exact composition, existing subjects, background, proportions, and perspective. Only change the rendering style to GTA: cinematic lighting, slightly desaturated colors, stylized textures. Do not add or remove any objects or people. Keep the scene exactly as-is.",
+
                 
 //                "positivePrompt": "Convert this image into a Studio Ghibli-style illustration. Keep all facial features, hair style and color, clothing, pose, and background exactly the same. Only apply Ghibli-style rendering: soft colors, whimsical shading, cinematic lighting, and hand-painted textures. Preserve proportions, perspective, and all character and environmental details exactly.",
                 

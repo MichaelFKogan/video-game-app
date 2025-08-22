@@ -45,7 +45,7 @@ struct Settings: View {
 
                     // Accent Color Section
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Accent Color")
+                        Text("Theme Color")
                             .font(.headline)
                         
                         let themeColorOrder = ["blue", "purple", "pink", "red", "orange", "yellow"] 

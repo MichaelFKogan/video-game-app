@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct GalleryView: View {
-    @StateObject private var viewModel = GalleryViewModel(client: supabase)
+    @EnvironmentObject var viewModel: GalleryViewModel
     @AppStorage("accentColorName") private var accentColorName: String = "blue"
     
 //    @AppStorage("galleryImages") private var savedGalleryImagesData: Data = Data()
@@ -123,15 +123,21 @@ struct GalleryView: View {
                         .padding(.bottom, 20)
                         .padding(.horizontal)
                         
-                        //                    // Hidden NavigationLink triggered by state
-                        //                    NavigationLink(
-                        //                        destination: CharacterProfileView(),
-                        //                        isActive: $navigateToProfile,
-                        //                        label: { EmptyView() }
-                        //                    )
+                        // Character Stats - Navigate To Character Page - Hidden NavigationLink
+                        NavigationLink(
+                            destination: CharacterProfileView(),
+                            isActive: $navigateToProfile,
+                            label: { EmptyView() }
+                        )
                         
                         LazyVGrid(columns: columns, spacing: spacing) {
-                            ForEach(Array(viewModel.galleryImages.enumerated()), id: \.element) { index, url in
+                            // Show loading placeholders first
+                            ForEach(viewModel.loadingPhotos, id: \.self) { photoId in
+                                LoadingPhotoPlaceholder(width: itemWidth, height: 200)
+                            }
+                            
+                            // Show actual images
+                            ForEach(Array(viewModel.galleryImages.enumerated()), id: \.offset) { index, url in
                                 NavigationLink(destination: GalleryDetailView(
                                     imageURL: url,
                                     photo: viewModel.getPhoto(for: url)
