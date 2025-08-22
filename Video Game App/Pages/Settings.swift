@@ -42,6 +42,27 @@ struct Settings: View {
                         .cornerRadius(12)
                         .shadow(radius: 2)
                     }
+                    
+                    // App Theme Toggle
+                    Button(action: { isDarkMode.toggle() }) {
+                        VStack {
+                            Text("App Theme")
+                                .fontWeight(.semibold)
+                            Text("Neutral")
+                                .fontWeight(.semibold)
+                            Text("Cinematic Game Art")
+                                .fontWeight(.semibold)
+                            Text("Anime")
+                                .fontWeight(.semibold)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity) // full-width button
+//                        .background(isDarkMode ? Color.black : Color.white)
+                        .background(Color(UIColor.systemGray6))
+                        .foregroundColor(isDarkMode ? .white : .black)
+                        .cornerRadius(12)
+                        .shadow(radius: 2)
+                    }
 
                     // Accent Color Section
                     VStack(alignment: .leading, spacing: 10) {

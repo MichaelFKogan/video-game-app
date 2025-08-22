@@ -48,6 +48,13 @@ struct ContentView: View {
                     .tabItem {Label("Storyline", systemImage: "book.closed")}
                     .tag(0)
                 
+            // 🛠️ Quests Tab
+                AuthGuard {
+                    QuestView()
+                }
+                    .tabItem {Label("Side Quests", systemImage: "scroll")}
+                    .tag(1)
+                
             // 📷 Camera
                 AuthGuard {
                     CameraButtonView()
@@ -56,14 +63,7 @@ struct ContentView: View {
                 }
                 .environmentObject(session)
                     .tabItem { Label("Camera", systemImage: "camera") }
-                    .tag(1)
-                
-//            // 🛠️ Quests Tab
-//                AuthGuard {
-//                    QuestView()
-//                }
-//                    .tabItem {Label("Side Quests", systemImage: "scroll")}
-//                    .tag(2)
+                    .tag(2)
                 
             // 👤 Character
                 AuthGuard {
@@ -72,7 +72,7 @@ struct ContentView: View {
                     .tabItem {
                         Label("Character", systemImage: "person.crop.circle")
                     }
-                    .tag(2)
+                    .tag(3)
                 
             // ⚙️ Settings
                     Settings()
@@ -80,7 +80,7 @@ struct ContentView: View {
                     .tabItem {
                         Label("Settings", systemImage: "gear")
                     }
-                    .tag(3)
+                    .tag(4)
                 
             }
             .environmentObject(session)

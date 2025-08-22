@@ -14,49 +14,58 @@ struct CameraButtonView: View {
     @State private var selectedTag: String? = nil
     
     // 2️⃣ Add state variable for selected animated style
-    @State private var selectedStyle: String = "Pixel Art"
+    @State private var selectedStyle: String = "Cinematic Game Art"
 
     // 2️⃣ Your tags array
     let tags = ["📓 Daily Journal", "⚔️ Quests", "🥪 Rations", "🗺️ Map", "📦 Inventory"]
     
     // 3️⃣ Animated style options with pricing
-    let styleOptions = [
-        ("Pixel Art", "$0.03", "🎮", "Classic 8-bit pixel art style"),
-        ("Anime", "$0.15", "🌸", "Japanese anime aesthetic"),
-        ("Watercolor", "$0.08", "🎨", "Soft watercolor painting style"),
-        ("Cyberpunk", "$0.12", "🤖", "Futuristic neon aesthetic"),
-        ("Fantasy", "$0.10", "🐉", "Magical fantasy world style")
+    // Environment-focused styles (cheaper, good for scenes/objects)
+    let environmentStyles = [
+        ("Cinematic Game Art", "$0.03", "🎮", "Gritty, cinematic lighting with slightly desaturated tones and stylized textures"),
+        ("Anime", "$0.03", "🌸", "Japanese anime aesthetic")
+//        ("Watercolor", "$0.03", "🎨", "Soft watercolor painting style"),
+//        ("Cyberpunk", "$0.03", "🤖", "Futuristic neon aesthetic")
+    ]
+    
+    // Face-focused styles (more expensive, optimized for portraits)
+    let faceStyles = [
+        ("Cinematic Portrait", "$0.15", "🎬", "Hollywood-style portrait with dramatic lighting"),
+        ("Portrait Anime", "$0.15", "👤", "Studio Ghibli-style portrait with enhanced facial details")
+//        ("Fantasy Portrait", "$0.15", "✨", "Magical fantasy portrait with ethereal lighting"),
+//        ("Artistic Portrait", "$0.15", "🎭", "Classical artistic portrait style")
     ]
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 12) {
-                
-//                // Page Title
-//                HStack {
-//                    Text("Camera")
-//                        .font(.largeTitle)
-//                        .fontWeight(.bold)
-//                    Spacer()
-//                }
-//                .padding()
+            ScrollView {
+                VStack(spacing: 12) {
+                    
+//                    // Page Title
+//                    HStack {
+//                        Text("Camera")
+//                            .font(.largeTitle)
+//                            .fontWeight(.bold)
+//                        Spacer()
+//                    }
+//                    .padding()
 
-            // Live Camera
-                ZStack {
-                    if cameraService.capturedImage == nil {
-                        CameraPreview(session: cameraService.session)
-                            .cornerRadius(12)
-                            .shadow(radius: 6)
-                    } else {
-                        Image(uiImage: cameraService.capturedImage!)
-                            .resizable()
-                            .scaledToFit()
-                            .cornerRadius(12)
-                            .shadow(radius: 6)
+                // Live Camera
+                    ZStack {
+                        if cameraService.capturedImage == nil {
+                            CameraPreview(session: cameraService.session)
+                                .cornerRadius(12)
+                                .shadow(radius: 6)
+                        } else {
+                            Image(uiImage: cameraService.capturedImage!)
+                                .resizable()
+                                .scaledToFit()
+                                .cornerRadius(12)
+                                .shadow(radius: 6)
+                        }
                     }
-                }
-                .frame(height: UIScreen.main.bounds.height * 0.55)
-                .padding(.horizontal)
+                    .frame(height: UIScreen.main.bounds.height * 0.55)
+                    .padding(.horizontal)
                 
                 
 
@@ -105,8 +114,9 @@ struct CameraButtonView: View {
                                 // Add loading placeholder to gallery
                                 galleryViewModel.addLoadingPhoto(photoId)
                                 
-                                // Show global transforming notification
+                                // Show global transforming notification with style info
                                 notificationManager.showTransformingNotification(for: photoId)
+                                print("🎨 Processing image with style: \(selectedStyle)")
 
                                 // Make pixels upright and portrait before sending
                                 let normalized = raw.normalizedOrientation()
@@ -118,7 +128,7 @@ struct CameraButtonView: View {
                                 
                                 let runwareAPI = RunwareAPI()
                                 
-                                RunwareAPI().sendImageToRunware(image: finalImage) { result in
+                                RunwareAPI().sendImageToRunware(image: finalImage, style: selectedStyle) { result in
                                     DispatchQueue.main.async {
                                         switch result {
                                         case .success(let runwareURLString):
@@ -208,30 +218,94 @@ struct CameraButtonView: View {
                 Divider()
                 
                 // Animated Style Selection Section
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 16) {
                     HStack {
                         Text("Choose Style")
                             .font(.headline)
                             .fontWeight(.semibold)
                         Spacer()
+                        Text("Selected: \(selectedStyle)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                     .padding(.horizontal)
                     
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(styleOptions, id: \.0) { style in
-                                StyleSelectionButton(
-                                    title: style.0,
-                                    price: style.1,
-                                    icon: style.2,
-                                    description: style.3,
-                                    isSelected: selectedStyle == style.0
-                                ) {
-                                    selectedStyle = style.0
-                                }
-                            }
+                    // Environment Styles Row (Cheaper)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("🌍 Environment Styles")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text("• $0.03 per image")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                                .fontWeight(.semibold)
+                            Spacer()
                         }
                         .padding(.horizontal)
+                        HStack {
+                            Text("Good for backgrounds")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(environmentStyles, id: \.0) { style in
+                                    StyleSelectionButton(
+                                        title: style.0,
+                                        price: style.1,
+                                        icon: style.2,
+                                        description: style.3,
+                                        isSelected: selectedStyle == style.0
+                                    ) {
+                                        selectedStyle = style.0
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                    }
+                    
+                    // Face Styles Row (More Expensive)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("👤 Portrait Styles")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text("• $0.15 per image")
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                                .fontWeight(.semibold)
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        HStack {
+                            Text("Good for faces")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(faceStyles, id: \.0) { style in
+                                    StyleSelectionButton(
+                                        title: style.0,
+                                        price: style.1,
+                                        icon: style.2,
+                                        description: style.3,
+                                        isSelected: selectedStyle == style.0
+                                    ) {
+                                        selectedStyle = style.0
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
                     }
                 }
                 .padding(.vertical, 8)
@@ -277,6 +351,8 @@ struct CameraButtonView: View {
                 
 
                 Spacer()
+                }
+                .padding(.bottom, 120) // Add some bottom padding for better scrolling
             }
             .onAppear {
                 cameraService.startSession()

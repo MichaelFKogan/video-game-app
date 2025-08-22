@@ -109,6 +109,24 @@ struct GalleryView: View {
                             
                             Spacer()
                             
+                            // Grid view button
+                            Button(action: {
+                                isGridView = true
+                            }) {
+                                Image(systemName: "square.grid.2x2")
+                                    .font(.title2)
+                                    .foregroundColor(isGridView ? .accentColor : .secondary)
+                            }
+    
+                            // List view button
+                            Button(action: {
+                                isGridView = false
+                            }) {
+                                Image(systemName: "rectangle.stack")
+                                    .font(.title2)
+                                    .foregroundColor(!isGridView ? .accentColor : .secondary)
+                            }
+                            
                         }
                         .padding()
                         
