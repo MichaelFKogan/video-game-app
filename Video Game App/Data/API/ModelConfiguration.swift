@@ -60,7 +60,7 @@ enum ModelConfigurationLibrary {
     
     /// Anime style configuration
     private static let animeConfiguration = ModelConfiguration(
-        model: "bytedance:3@1", // Using a different model for anime style
+        model: "runware:106@1", // Using a different model for anime style
         positivePrompt: """
         Convert this image into stylized anime art similar to Studio Ghibli. Preserve the exact composition, existing subjects, background, proportions, and perspective. Only change the rendering style similar to Studio Ghibli: soft colors, whimsical shading, cinematic lighting, and hand-painted textures. Do not add or remove any objects or people. Keep the scene exactly as-is.
         """,

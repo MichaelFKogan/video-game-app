@@ -25,11 +25,11 @@ struct CameraButtonView: View {
     // 3️⃣ Animated style options with pricing
     // Scenes/objects (cheaper)
     let environmentStyles = [
-        ("Illustration", "$0.03", "🎮", "Painted, stylized"),
-        ("Anime", "$0.03", "💫", "Bright, hand-drawn"),
-        ("Pixel Art", "$0.03", "👾", "Retro, pixelated")
+        ("Illustration", "$0.03", "🎮", "Painted, stylized", "illustration_bg"),
+        ("Anime", "$0.03", "💫", "Hand-drawn", "anime_bg")
+//        ("Pixel Art", "$0.03", "👾", "Retro, pixelated", "pixelart_bg")
     ]
-
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -150,6 +150,7 @@ struct CameraButtonView: View {
                                             price: style.1,
                                             icon: style.2,
                                             description: style.3,
+                                            backgroundImage: style.4,
                                             isSelected: selectedStyle == style.0
                                         ) {
                                             selectedStyle = style.0
@@ -303,56 +304,89 @@ struct CameraButtonView: View {
     }
 }
 
-// MARK: - Style Selection Button
 struct StyleSelectionButton: View {
     let title: String
     let price: String
     let icon: String
     let description: String
+    let backgroundImage: String
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(icon)
-                        .font(.title2)
-                    Spacer()
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                            .font(.title3)
-                    }
-                }
+            ZStack(alignment: .bottomLeading) {
+                // Background image - no extra container
+                Image(backgroundImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 140, height: 120)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(isSelected ? .white : .primary)
+                // Gradient overlay for better readability
+                LinearGradient(
+                    colors: [.black.opacity(0.55), .black.opacity(0.25), .clear],
+                    startPoint: .bottom,
+                    endPoint: .top
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                // Clean content layout
+                VStack(alignment: .leading, spacing: 6) {
+
+                    // Checkmark moved to top right to avoid face
+                    if isSelected {
+                        HStack{
+                            ZStack {
+                                Image(systemName: "circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.accentColor) // circle is white
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white) // checkmark in accent color
+                            }
+                        }
+                    }
+                    
+                    HStack {
+//                            Text(icon)
+//                                .font(.title3)
+                        
+                        Text(title)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                            .shadow(radius: 2)
+                    }
 
                     Text(description)
                         .font(.caption)
-                        .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
+                        .foregroundColor(.white.opacity(0.95))
+                        .shadow(radius: 2)
                         .lineLimit(2)
 
                     Text(price)
                         .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(isSelected ? .white : .accentColor)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                         .padding(.vertical, 3)
+                        .background(
+                            LinearGradient(
+                                colors: [.accentColor, .accentColor.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            .clipShape(Capsule())
+                        )
+                        .shadow(color: .accentColor.opacity(0.5), radius: 2)
                 }
+                .padding(8)
             }
-            .padding(12)
-            .frame(width: 140, height: 100)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.accentColor : Color(UIColor.systemGray6))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
-            )
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .scaleEffect(isSelected ? 1.02 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
         .buttonStyle(PlainButtonStyle())
     }
