@@ -153,36 +153,70 @@ struct GalleryView: View {
                             label: { EmptyView() }
                         )
                         
-                        LazyVGrid(columns: columns, spacing: spacing) {
-                            // Show loading placeholders first
-                            ForEach(viewModel.loadingPhotos, id: \.self) { photoId in
-                                LoadingPhotoPlaceholder(width: itemWidth, height: 200)
-                            }
-                            
-                            // Show actual images
-                            ForEach(viewModel.galleryImages, id: \.self) { url in
-                                NavigationLink(destination: GalleryDetailView(
-                                    imageURL: url,
-                                    photo: viewModel.getPhoto(for: url)
-                                )
-                                .environmentObject(viewModel)) {
-                                    CachedAsyncImage(url: URL(string: url)) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: itemWidth, height: 200)
-                                            .clipped()
-                                    } placeholder: {
-                                        ProgressView()
-                                            .frame(width: itemWidth, height: 200)
-                                    }
+                        if isGridView {
+                            LazyVGrid(columns: columns, spacing: spacing) {
+                                // Show loading placeholders first
+                                ForEach(viewModel.loadingPhotos, id: \.self) { _ in
+                                    LoadingPhotoPlaceholder(width: itemWidth, height: 200)
                                 }
-                                .buttonStyle(PlainButtonStyle())
+
+                                // Show actual images
+                                ForEach(viewModel.galleryImages, id: \.self) { url in
+                                    NavigationLink(destination: GalleryDetailView(
+                                        imageURL: url,
+                                        photo: viewModel.getPhoto(for: url)
+                                    )
+                                    .environmentObject(viewModel)) {
+                                        CachedAsyncImage(url: URL(string: url)) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: itemWidth, height: 200)
+                                                .clipped()
+                                        } placeholder: {
+                                            ProgressView()
+                                                .frame(width: itemWidth, height: 200)
+                                        }
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
                             }
+                            // Use horizontal padding equal to `spacing` so the math lines up
+                            .padding(.horizontal, horizontalOuterPadding)
+                            .padding(.bottom) // optional
+                        } else {
+                            LazyVStack(spacing: spacing) {
+                                // Show loading placeholders first
+                                ForEach(viewModel.loadingPhotos, id: \.self) { _ in
+                                    LoadingPhotoPlaceholder(width: contentWidth, height: 200)
+                                }
+
+                                // Show actual images
+                                ForEach(viewModel.galleryImages, id: \.self) { url in
+                                    NavigationLink(destination: GalleryDetailView(
+                                        imageURL: url,
+                                        photo: viewModel.getPhoto(for: url)
+                                    )
+                                    .environmentObject(viewModel)) {
+                                        CachedAsyncImage(url: URL(string: url)) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(height: 250)
+                                                .frame(maxWidth: .infinity)
+                                                .clipped()
+                                        } placeholder: {
+                                            ProgressView()
+                                                .frame(height: 250)
+                                                .frame(maxWidth: .infinity)
+                                        }
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.horizontal, horizontalOuterPadding)
+                            .padding(.bottom) // optional
                         }
-                        // Use horizontal padding equal to `spacing` so the math lines up
-                        .padding(.horizontal, horizontalOuterPadding)
-                        .padding(.bottom) // optional
                         
                         
                         //                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 4) {
