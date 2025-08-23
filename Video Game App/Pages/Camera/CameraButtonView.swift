@@ -33,7 +33,7 @@ struct CameraButtonView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: 0) {
 
                     // Live Camera
                     ZStack {
@@ -54,6 +54,22 @@ struct CameraButtonView: View {
                     .padding(.horizontal)
 
                     Spacer()
+
+                // Style indicator overlay
+                    VStack {
+                        HStack {
+                            Text("Style:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(selectedStyle)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.primary)
+                        }
+                        .background(Color(UIColor.systemBackground).opacity(0.9))
+                        .cornerRadius(8)
+                        .shadow(radius: 2)
+                    }
 
                     // Buttons: Camera - Photo Library - Clear
                     HStack(spacing: 10) {
@@ -129,6 +145,7 @@ struct CameraButtonView: View {
                     .padding(.vertical, 8)
 
                     Divider()
+                        .padding(.vertical, 12)
 
                     // Animated Style Selection Section
                     VStack(alignment: .leading, spacing: 16) {
@@ -136,6 +153,9 @@ struct CameraButtonView: View {
                             Text("Choose a Style")
                                 .font(.headline)
                                 .fontWeight(.semibold)
+                            Text("• 3 credits each")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                             Spacer()
                         }
                         .padding(.horizontal)
@@ -147,7 +167,6 @@ struct CameraButtonView: View {
                                     ForEach(environmentStyles, id: \.0) { style in
                                         StyleSelectionButton(
                                             title: style.0,
-                                            price: style.1,
                                             icon: style.2,
                                             description: style.3,
                                             backgroundImage: style.4,
@@ -306,7 +325,6 @@ struct CameraButtonView: View {
 
 struct StyleSelectionButton: View {
     let title: String
-    let price: String
     let icon: String
     let description: String
     let backgroundImage: String
@@ -320,7 +338,7 @@ struct StyleSelectionButton: View {
                 Image(backgroundImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 140, height: 120)
+                    .frame(width: 140, height: 130)
                     .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
@@ -334,58 +352,58 @@ struct StyleSelectionButton: View {
 
                 // Clean content layout
                 VStack(alignment: .leading, spacing: 6) {
-
-                    // Checkmark moved to top right to avoid face
+                    
+                    // Checkmark in top left
                     if isSelected {
-                        HStack{
+                        HStack {
                             ZStack {
                                 Image(systemName: "circle.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.accentColor) // circle is white
+                                    .font(.system(size: 28))
+                                    .foregroundColor(.accentColor)
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.white) // checkmark in accent color
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
                             }
+                            Spacer()
                         }
                     }
                     
                     HStack {
-//                            Text(icon)
-//                                .font(.title3)
+                        Text(icon)
+                            .font(.title2)
+                            .shadow(color: .black.opacity(0.8), radius: 3)
                         
-                        Text(title)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
-                            .shadow(radius: 2)
+                        Spacer()
                     }
+                        
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(
+                            LinearGradient(
+                                colors: isSelected
+                                    ? [.accentColor, .accentColor.opacity(0.7)]
+                                    : [.gray, .gray.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            .clipShape(Capsule())
+                        )
+                        .shadow(color: .gray.opacity(0.5), radius: 2)
 
                     Text(description)
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.95))
                         .shadow(radius: 2)
                         .lineLimit(2)
-
-                    Text(price)
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                         .padding(.vertical, 3)
-                        .background(
-                            LinearGradient(
-                                colors: [.accentColor, .accentColor.opacity(0.7)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                            .clipShape(Capsule())
-                        )
-                        .shadow(color: .accentColor.opacity(0.5), radius: 2)
                 }
                 .padding(8)
             }
             .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-            .scaleEffect(isSelected ? 1.02 : 1.0)
+            .scaleEffect(isSelected ? 1.06 : 1.0)
             .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
         .buttonStyle(PlainButtonStyle())
