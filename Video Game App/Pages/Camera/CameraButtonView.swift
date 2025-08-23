@@ -64,7 +64,7 @@ struct CameraButtonView: View {
                             Text(selectedStyle)
                                 .font(.caption)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.primary)
+                                .foregroundColor(.primary).opacity(0.8)
                         }
                         .background(Color(UIColor.systemBackground).opacity(0.9))
                         .cornerRadius(8)
