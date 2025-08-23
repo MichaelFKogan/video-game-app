@@ -107,13 +107,13 @@ struct GalleryView: View {
                     ScrollView {
                         
                         HStack{
-                            
+
                             Text("📖 Storyline")
                                 .font(.largeTitle)
                                 .fontWeight(.bold)
-                            
+
                             Spacer()
-                            
+
                             // Grid view button
                             Button(action: {
                                 isGridView = true
@@ -122,7 +122,7 @@ struct GalleryView: View {
                                     .font(.title2)
                                     .foregroundColor(isGridView ? .accentColor : .secondary)
                             }
-    
+
                             // List view button
                             Button(action: {
                                 isGridView = false
@@ -131,9 +131,11 @@ struct GalleryView: View {
                                     .font(.title2)
                                     .foregroundColor(!isGridView ? .accentColor : .secondary)
                             }
-                            
+
                         }
                         .padding()
+                        .background(Color(.systemBackground))
+                        .zIndex(1)
                         
                         VStack{
                             Text(buildInstructionText(accentColorName: accentColorName))
@@ -153,36 +155,109 @@ struct GalleryView: View {
                             label: { EmptyView() }
                         )
                         
-                        LazyVGrid(columns: columns, spacing: spacing) {
-                            // Show loading placeholders first
-                            ForEach(viewModel.loadingPhotos, id: \.self) { photoId in
-                                LoadingPhotoPlaceholder(width: itemWidth, height: 200)
-                            }
-                            
-                            // Show actual images
-                            ForEach(viewModel.galleryImages, id: \.self) { url in
-                                NavigationLink(destination: GalleryDetailView(
-                                    imageURL: url,
-                                    photo: viewModel.getPhoto(for: url)
-                                )
-                                .environmentObject(viewModel)) {
-                                    CachedAsyncImage(url: URL(string: url)) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: itemWidth, height: 200)
-                                            .clipped()
-                                    } placeholder: {
-                                        ProgressView()
-                                            .frame(width: itemWidth, height: 200)
-                                    }
+                        if isGridView {
+                            LazyVGrid(columns: columns, spacing: spacing) {
+                                // Show loading placeholders first
+                                ForEach(viewModel.loadingPhotos, id: \.self) { _ in
+                                    LoadingPhotoPlaceholder(width: itemWidth, height: 200)
                                 }
-                                .buttonStyle(PlainButtonStyle())
+
+                                // Show actual images
+                                ForEach(viewModel.galleryImages, id: \.self) { url in
+                                    NavigationLink(destination: GalleryDetailView(
+                                        imageURL: url,
+                                        photo: viewModel.getPhoto(for: url)
+                                    )
+                                    .environmentObject(viewModel)) {
+                                        CachedAsyncImage(url: URL(string: url)) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: itemWidth, height: 200)
+                                                .clipped()
+                                        } placeholder: {
+                                            ProgressView()
+                                                .frame(width: itemWidth, height: 200)
+                                        }
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
                             }
+                            // Use horizontal padding equal to `spacing` so the math lines up
+                            .padding(.horizontal, horizontalOuterPadding)
+                            .padding(.bottom) // optional
+                        } else {
+                            LazyVStack(spacing: spacing) {
+                                // Show loading placeholders first
+                                ForEach(viewModel.loadingPhotos, id: \.self) { _ in
+                                    LoadingPhotoPlaceholder(width: contentWidth, height: 200)
+                                }
+
+                                // Show actual images styled like QuestView cards
+                                ForEach(Array(viewModel.galleryImages.enumerated()), id: \.element) { index, url in
+                                    let activity = sampleActivities[index % sampleActivities.count]
+                                    NavigationLink(destination: GalleryDetailView(
+                                        imageURL: url,
+                                        photo: viewModel.getPhoto(for: url)
+                                    )
+                                    .environmentObject(viewModel)) {
+                                        VStack(alignment: .leading) {
+                                            // Dummy title
+                                            Text("\(activity.title)")
+                                                .font(.headline)
+                                                .padding(.leading)
+
+                                            // Image with XP overlay
+                                            ZStack(alignment: .topTrailing) {
+                                                CachedAsyncImage(url: URL(string: url)) { image in
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(height: 250)
+                                                        .frame(maxWidth: .infinity)
+                                                        .clipped()
+                                                } placeholder: {
+                                                    ProgressView()
+                                                        .frame(height: 250)
+                                                        .frame(maxWidth: .infinity)
+                                                }
+
+                                                HStack(spacing: 4) {
+                                                    Image(systemName: "star.fill")
+                                                        .foregroundColor(.yellow).opacity(0.8)
+                                                    Text("\(activity.xp) XP")
+                                                        .font(.caption)
+                                                        .bold()
+                                                        .foregroundColor(.white).opacity(0.8)
+                                                }
+                                                .padding(6)
+                                                .background(Color.black.opacity(0.7))
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                .padding(8)
+                                            }
+                                            .padding(.horizontal)
+
+                                            // Dummy description
+                                            Text("This is a dummy description for image \(index + 1).")
+                                                .font(.subheadline)
+                                                .foregroundColor(.secondary)
+                                                .multilineTextAlignment(.leading)
+                                                .padding([.horizontal, .top, .bottom])
+                                        }
+                                        .padding(.top, 8)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(Color(.systemBackground))
+                                                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                                        )
+                                        .padding(.horizontal)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.horizontal, horizontalOuterPadding)
+                            .padding(.bottom) // optional
                         }
-                        // Use horizontal padding equal to `spacing` so the math lines up
-                        .padding(.horizontal, horizontalOuterPadding)
-                        .padding(.bottom) // optional
                         
                         
                         //                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 4) {
