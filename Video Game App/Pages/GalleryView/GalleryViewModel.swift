@@ -4,7 +4,7 @@ import Supabase
 
 @MainActor
 class GalleryViewModel: ObservableObject {
-    @Published var galleryImages: [String] = []   // signed URLs
+    @Published var galleryImages: [String] = []   // public URLs
     @Published var photos: [Photo] = []           // full photo objects
     @Published var loadingPhotos: [String] = []   // photos currently being processed
     
@@ -65,26 +65,34 @@ class GalleryViewModel: ObservableObject {
                 .execute()
                 .value
             
-            // 2. Extract image paths (not signed URLs)
+            // 2. Extract image paths for cache comparison
             let freshPaths = rows.map { $0.image_url }
             let cachedPaths = loadCachedPaths()
             
-            // 3. Compare paths (not signed URLs) to see if images actually changed
+            // 3. Only regenerate URLs if paths have changed (public URLs don't expire)
             if freshPaths != cachedPaths {
-                // Images have changed, generate new signed URLs
-                var freshURLs: [String] = []
+                // Generate public URLs for all images
+                var publicURLs: [String] = []
                 for row in rows {
-                    let signed = try await client.storage
+                    let publicUrl = try client.storage
                         .from("photos")
-                        .createSignedURL(path: row.image_url, expiresIn: 60 * 60)
-                    freshURLs.append(signed.absoluteString)
+                        .getPublicURL(path: row.image_url)
+                        .absoluteString
+                    publicURLs.append(publicUrl)
                 }
                 
-                self.galleryImages = freshURLs
-                self.photos = rows
-                saveToCache(freshURLs, paths: freshPaths)
-                print("🔄 Updated gallery with \(freshURLs.count) new images")
+                // Only update if the URLs are actually different
+                if publicURLs != self.galleryImages {
+                    self.galleryImages = publicURLs
+                    self.photos = rows
+                    saveToCache(publicURLs, paths: freshPaths)
+                    print("🔄 Updated gallery with \(publicURLs.count) new images")
+                } else {
+                    print("✅ URLs are the same, no update needed")
+                }
             } else {
+                // Just update the photos array, keep existing URLs
+                self.photos = rows
                 print("✅ Cache is up-to-date, no changes")
             }
             
@@ -123,5 +131,51 @@ class GalleryViewModel: ObservableObject {
     
     func isPhotoLoading(_ photoId: String) -> Bool {
         return loadingPhotos.contains(photoId)
+    }
+    
+    // MARK: - Preload images for better performance
+    func preloadImages() {
+        for urlString in galleryImages.prefix(10) { // Preload first 10 images
+            if let url = URL(string: urlString) {
+                // This will trigger the cache to load the image
+                URLSession.shared.dataTask(with: url) { data, response, error in
+                    if let data = data, let image = UIImage(data: data) {
+                        DispatchQueue.main.async {
+                            ImageCache.shared.set(image, forKey: urlString)
+                        }
+                    }
+                }.resume()
+            }
+        }
+    }
+    
+    // MARK: - Clear image cache (useful for debugging or memory management)
+    func clearImageCache() {
+        ImageCache.shared.removeAll()
+        print("🗑️ Image cache cleared")
+    }
+    
+    // MARK: - Delete photo
+    func deletePhoto(photoId: UUID) async {
+        do {
+            let photoService = PhotoService(client: client)
+            try await photoService.deletePhoto(photoId: photoId)
+            
+            // Remove from local arrays
+            if let index = photos.firstIndex(where: { $0.id == photoId }) {
+                photos.remove(at: index)
+                if index < galleryImages.count {
+                    galleryImages.remove(at: index)
+                }
+                
+                // Update cache
+                let freshPaths = photos.map { $0.image_url }
+                saveToCache(galleryImages, paths: freshPaths)
+                
+                print("✅ Photo deleted successfully from local state")
+            }
+        } catch {
+            print("❌ Failed to delete photo: \(error)")
+        }
     }
 }

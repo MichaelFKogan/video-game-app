@@ -48,6 +48,11 @@ struct GalleryView: View {
         let xp: Int
         let emoji: String
     }
+    
+    struct GalleryImage: Identifiable, Hashable {
+        let id: UUID
+        let url: String
+    }
 
     let sampleActivities = [
         Activity(title: "Traveling to New York City for a tech conference", xp: 10, emoji: "✈️"),
@@ -155,21 +160,22 @@ struct GalleryView: View {
                             }
                             
                             // Show actual images
-                            ForEach(Array(viewModel.galleryImages.enumerated()), id: \.offset) { index, url in
+                            ForEach(viewModel.galleryImages, id: \.self) { url in
                                 NavigationLink(destination: GalleryDetailView(
                                     imageURL: url,
                                     photo: viewModel.getPhoto(for: url)
-                                )) {
-                                    AsyncImage(url: URL(string: url)) { image in
+                                )
+                                .environmentObject(viewModel)) {
+                                    CachedAsyncImage(url: URL(string: url)) { image in
                                         image
                                             .resizable()
                                             .scaledToFill()
+                                            .frame(width: itemWidth, height: 200)
+                                            .clipped()
                                     } placeholder: {
                                         ProgressView()
+                                            .frame(width: itemWidth, height: 200)
                                     }
-                                    .frame(width: itemWidth, height: 200)
-                                    .clipped()
-//                                    .cornerRadius(8)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -264,10 +270,9 @@ struct GalleryView: View {
                     }
                     
                 }
-                //            .onAppear {
-                //                viewModel.loadGalleryImages()
-                //                loadGalleryImages()
-                //            }
+                .onAppear {
+                    viewModel.preloadImages()
+                }
                 // ✅ Attach the sheet here
                 .sheet(isPresented: $showCameraSheet) {
                     NavigationView {

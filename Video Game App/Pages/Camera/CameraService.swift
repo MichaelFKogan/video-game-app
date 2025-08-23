@@ -2,45 +2,73 @@ import SwiftUI
 import AVFoundation
 import UIKit
 
-class CameraService: NSObject, ObservableObject {
-    let session = AVCaptureSession()
-    private var photoOutput = AVCapturePhotoOutput()
-    
-    @Published var capturedImage: UIImage?
+import SwiftUI
+import AVFoundation
+import UIKit
 
-    override init() {
-        super.init()
+@MainActor
+final class CameraService: NSObject, ObservableObject {
+    let session = AVCaptureSession()
+    private let photoOutput = AVCapturePhotoOutput()
+    private var currentInput: AVCaptureDeviceInput?
+    @Published var capturedImage: UIImage?
+    @Published private(set) var cameraPosition: AVCaptureDevice.Position = .back
+
+    func startSession() {
+        session.beginConfiguration()
         session.sessionPreset = .photo
-        
-        if let device = AVCaptureDevice.default(for: .video),
-           let input = try? AVCaptureDeviceInput(device: device),
-           session.canAddInput(input) {
-            session.addInput(input)
-        }
-        
+
+        configureInput(position: .back)
+
         if session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
+            photoOutput.isHighResolutionCaptureEnabled = true
+        }
+
+        session.commitConfiguration()
+
+        // startRunning blocks; do it off the main thread
+        DispatchQueue.global(qos: .userInitiated).async { [weak session] in
+            session?.startRunning()
         }
     }
-    
-    func startSession() {
-        if !session.isRunning {
-            DispatchQueue.global(qos: .background).async { [weak self] in
-                self?.session.startRunning()
-            }
-        }
-    }
-    
+
     func stopSession() {
-        if session.isRunning {
-            DispatchQueue.global(qos: .background).async { [weak self] in
-                self?.session.stopRunning()
-            }
+        DispatchQueue.global(qos: .userInitiated).async { [weak session] in
+            session?.stopRunning()
         }
     }
-    
+
+    private func configureInput(position: AVCaptureDevice.Position) {
+        if let old = currentInput { session.removeInput(old) }
+
+        let discovery = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInWideAngleCamera],
+            mediaType: .video,
+            position: position
+        )
+        guard let device = discovery.devices.first,
+              let input = try? AVCaptureDeviceInput(device: device),
+              session.canAddInput(input) else { return }
+
+        session.addInput(input)
+        currentInput = input
+        cameraPosition = position     // <-- add this
+    }
+
+    func switchCamera() {
+        session.beginConfiguration()
+        let newPos: AVCaptureDevice.Position = (currentInput?.device.position == .back) ? .front : .back
+        configureInput(position: newPos)
+        session.commitConfiguration()
+    }
+
     func capturePhoto() {
         let settings = AVCapturePhotoSettings()
+        if let connection = photoOutput.connection(with: .video) {
+            connection.videoOrientation = .portrait
+            connection.isVideoMirrored = false // preview mirrors instead
+        }
         photoOutput.capturePhoto(with: settings, delegate: self)
     }
 }
@@ -49,11 +77,9 @@ extension CameraService: AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput,
                      didFinishProcessingPhoto photo: AVCapturePhoto,
                      error: Error?) {
-        if let data = photo.fileDataRepresentation(),
-           let image = UIImage(data: data) {
-            DispatchQueue.main.async {
-                self.capturedImage = image
-            }
-        }
+        guard error == nil,
+              let data = photo.fileDataRepresentation(),
+              let image = UIImage(data: data) else { return }
+        capturedImage = image
     }
 }

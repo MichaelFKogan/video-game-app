@@ -30,7 +30,7 @@ struct CharacterProfileView: View {
     @State private var isEditing = false
 
     var body: some View {
-//        NavigationView {
+        NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
                     
@@ -46,18 +46,14 @@ struct CharacterProfileView: View {
                                 .shadow(radius: 5)
                             Spacer()
                             
-                                Button("Log Out") {
-                                    Task { await session.signOut() } // no MainActor.run needed
-                                }
-
                             
-//                            NavigationLink(destination: Settings()) {
-//                                Image(systemName: "gear")
-//                                    .resizable()
-//                                    .frame(width: 26, height: 26)
-//                                //                            .foregroundColor(accentColorName.toColor())
-//                                    .foregroundColor(.gray)
-//                            }
+                            NavigationLink(destination: Settings()) {
+                                Image(systemName: "gear")
+                                    .resizable()
+                                    .frame(width: 26, height: 26)
+                                //                            .foregroundColor(accentColorName.toColor())
+                                    .foregroundColor(.gray)
+                            }
                             
                         }
                         .padding()
@@ -112,13 +108,14 @@ struct CharacterProfileView: View {
                         .disabled(isEditing && (name.isEmpty || !usernameAvailable))
                         .padding(.horizontal)
                         
-//                        HStack{
-//                            Spacer()
-//                            Button("Log Out") {
-//                                Task { await session.signOut() } // no MainActor.run needed
-//                            }
-//                        }
-//                        .padding(.horizontal)
+                        HStack{
+                            Spacer()
+                            Button("Log Out") {
+                                Task { await session.signOut() } // no MainActor.run needed
+                            }
+                            .foregroundColor(.gray)
+                        }
+                        .padding(.horizontal)
                     }
                     
                     
@@ -128,7 +125,7 @@ struct CharacterProfileView: View {
                 }
                 
             }
-//        }
+        }
         .navigationTitle("Character Profile")
         .task {
             await checkProfileExists()

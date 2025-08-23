@@ -48,11 +48,13 @@ struct ContentView: View {
                     .tabItem {Label("Storyline", systemImage: "book.closed")}
                     .tag(0)
                 
-            // 🛠️ Quests Tab
+            // 📓 Daily Entries
                 AuthGuard {
-                    QuestView()
+//                    DailyEntries()
+                    GalleryView()
+                        .environmentObject(galleryViewModel)
                 }
-                    .tabItem {Label("Side Quests", systemImage: "scroll")}
+                    .tabItem {Label("Photo Albums", systemImage: "photo.on.rectangle")}
                     .tag(1)
                 
             // 📷 Camera
@@ -63,6 +65,13 @@ struct ContentView: View {
                 }
                 .environmentObject(session)
                     .tabItem { Label("Camera", systemImage: "camera") }
+                    .tag(3)
+                
+            // 🛠️ Quests Tab
+                AuthGuard {
+                    QuestView()
+                }
+                    .tabItem {Label("Side Quests", systemImage: "scroll")}
                     .tag(2)
                 
             // 👤 Character
@@ -72,15 +81,15 @@ struct ContentView: View {
                     .tabItem {
                         Label("Character", systemImage: "person.crop.circle")
                     }
-                    .tag(3)
-                
-            // ⚙️ Settings
-                    Settings()
-                
-                    .tabItem {
-                        Label("Settings", systemImage: "gear")
-                    }
                     .tag(4)
+                
+//            // ⚙️ Settings
+//                    Settings()
+//                
+//                    .tabItem {
+//                        Label("Settings", systemImage: "gear")
+//                    }
+//                    .tag(4)
                 
             }
             .environmentObject(session)

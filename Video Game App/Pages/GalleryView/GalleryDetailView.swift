@@ -4,6 +4,10 @@ struct GalleryDetailView: View {
     let imageURL: String
     let photo: Photo?
     @AppStorage("accentColorName") private var accentColorName: String = "blue"
+    @EnvironmentObject var viewModel: GalleryViewModel
+    @Environment(\.presentationMode) var presentationMode
+    @State private var showingDeleteAlert = false
+    @State private var isDeleting = false
     
     // Mock data for demo - in real app this would come from the photo object
     private var mockTitle: String {
@@ -42,35 +46,16 @@ struct GalleryDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Full-sized image
-                AsyncImage(url: URL(string: imageURL)) { phase in
-                    switch phase {
-                    case .empty:
-                        ProgressView()
-                            .frame(maxWidth: .infinity, minHeight: 400)
-                            .background(Color.gray.opacity(0.1))
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFit()
-                            .cornerRadius(12)
-                            .shadow(radius: 8)
-                    case .failure(_):
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(height: 400)
-                            .overlay(
-                                VStack {
-                                    Image(systemName: "exclamationmark.triangle")
-                                        .font(.largeTitle)
-                                        .foregroundColor(.gray)
-                                    Text("Failed to load image")
-                                        .foregroundColor(.gray)
-                                }
-                            )
-                            .cornerRadius(12)
-                    @unknown default:
-                        EmptyView()
-                    }
+                CachedAsyncImage(url: URL(string: imageURL)) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .cornerRadius(12)
+                        .shadow(radius: 8)
+                } placeholder: {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 400)
+                        .background(Color.gray.opacity(0.1))
                 }
                 .padding(.horizontal)
                 
@@ -165,6 +150,30 @@ struct GalleryDetailView: View {
                             .cornerRadius(8)
                         }
                     }
+                    
+                    // Delete Button
+                    if photo != nil {
+                        Button(action: {
+                            showingDeleteAlert = true
+                        }) {
+                            HStack {
+                                if isDeleting {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                        .foregroundColor(.white)
+                                } else {
+                                    Image(systemName: "trash")
+                                }
+                                Text(isDeleting ? "Deleting..." : "Delete")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                        }
+                        .disabled(isDeleting)
+                    }
                 }
                 .padding(.horizontal)
                 
@@ -174,6 +183,29 @@ struct GalleryDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("Adventure Detail")
+        .alert("Delete Photo", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deletePhoto()
+            }
+        } message: {
+            Text("Are you sure you want to delete this photo? This action cannot be undone.")
+        }
+    }
+    
+    private func deletePhoto() {
+        guard let photo = photo else { return }
+        
+        isDeleting = true
+        
+        Task {
+            await viewModel.deletePhoto(photoId: photo.id)
+            
+            await MainActor.run {
+                isDeleting = false
+                presentationMode.wrappedValue.dismiss()
+            }
+        }
     }
 }
 

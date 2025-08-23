@@ -11,6 +11,7 @@ import AVFoundation
 // MARK: - CameraPreview
 struct CameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
+    let position: AVCaptureDevice.Position   // <-- add
     
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -29,6 +30,24 @@ struct CameraPreview: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {
         DispatchQueue.main.async {
             context.coordinator.previewLayer?.frame = uiView.bounds
+
+            if let connection = context.coordinator.previewLayer?.connection {
+                // Mirror only for front camera to match user expectation
+                if let input = session.inputs.first as? AVCaptureDeviceInput {
+                    connection.automaticallyAdjustsVideoMirroring = false
+                    connection.isVideoMirrored = (input.device.position == .front)
+                }
+            }
+        }
+    }
+    
+    // Force portrait (or compute from interface orientation) and mirror only on front
+    private func applyOrientationAndMirroring(previewLayer: AVCaptureVideoPreviewLayer) {
+        if let connection = previewLayer.connection {
+            // If you want dynamic rotation, map from windowScene.interfaceOrientation instead
+            connection.videoOrientation = .portrait
+            connection.automaticallyAdjustsVideoMirroring = false
+            connection.isVideoMirrored = (position == .front)
         }
     }
 

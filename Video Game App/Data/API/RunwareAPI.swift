@@ -41,31 +41,7 @@ class RunwareAPI {
         let dataURI = "data:image/jpeg;base64,\(base64String)"
         
         // Select prompt based on style
-        let positivePrompt: String
-        switch style {
-        // Environment-focused styles
-        case "Anime":
-            positivePrompt = "Convert this image into a Studio Ghibli-style illustration. Keep all facial features, hair style and color, clothing, pose, and background exactly the same. Only apply Ghibli-style rendering: soft colors, whimsical shading, cinematic lighting, and hand-painted textures. Preserve proportions, perspective, and all character and environmental details exactly."
-        case "Watercolor":
-            positivePrompt = "Convert this image into a beautiful watercolor painting. Keep all facial features, hair style and color, clothing, pose, and background exactly the same. Only apply watercolor-style rendering: soft, flowing colors, gentle brush strokes, and translucent paint effects. Preserve proportions, perspective, and all character and environmental details exactly."
-        case "Cyberpunk":
-            positivePrompt = "Convert this image into a cyberpunk aesthetic. Keep all facial features, hair style and color, clothing, pose, and background exactly the same. Only apply cyberpunk-style rendering: neon lighting, futuristic color palette, digital glitch effects, and high-tech atmosphere. Preserve proportions, perspective, and all character and environmental details exactly."
-        case "Cinematic Game Art":
-            positivePrompt = "Convert this image to a stylized Grand Theft Auto game art. Preserve the exact composition, existing subjects, background, proportions, and perspective. Only change the rendering style to GTA: cinematic lighting, slightly desaturated colors, stylized textures. Do not add or remove any objects or people. Keep the scene exactly as-is."
-            
-        // Face-focused styles (more detailed prompts for portraits)
-        case "Portrait Anime":
-            positivePrompt = "Convert this portrait into a Studio Ghibli-style character illustration. Enhance facial features with detailed anime-style rendering: large expressive eyes, soft skin textures, natural hair flow, and gentle facial proportions. Apply Ghibli-style lighting with warm, natural tones and subtle shadows. Preserve all facial features, hair style and color, clothing, and pose exactly as they are."
-        case "Fantasy Portrait":
-            positivePrompt = "Convert this portrait into a magical fantasy character illustration. Enhance facial features with ethereal lighting, mystical glow effects, and enchanted textures. Apply fantasy-style rendering with soft, magical colors, gentle shadows, and otherworldly atmosphere. Preserve all facial features, hair style and color, clothing, and pose exactly as they are."
-        case "Cinematic Portrait":
-            positivePrompt = "Convert this portrait into a Hollywood-style cinematic character shot. Enhance facial features with dramatic lighting, professional photography techniques, and cinematic color grading. Apply movie-style rendering with rich shadows, highlights, and professional portrait lighting. Preserve all facial features, hair style and color, clothing, and pose exactly as they are."
-        case "Artistic Portrait":
-            positivePrompt = "Convert this portrait into a classical artistic masterpiece. Enhance facial features with traditional painting techniques, artistic lighting, and sophisticated color palette. Apply classical portrait rendering with refined brushwork, elegant shadows, and timeless artistic style. Preserve all facial features, hair style and color, clothing, and pose exactly as they are."
-            
-        default:
-            positivePrompt = "Convert this image to a stylized Grand Theft Auto game art. Preserve the exact composition, existing subjects, background, proportions, and perspective. Only change the rendering style to GTA: cinematic lighting, slightly desaturated colors, stylized textures. Do not add or remove any objects or people. Keep the scene exactly as-is."
-        }
+        let positivePrompt = PromptLibrary.positivePrompt(for: style)
         
         print("🎨 Using style: \(style) with prompt: \(positivePrompt)")
         
