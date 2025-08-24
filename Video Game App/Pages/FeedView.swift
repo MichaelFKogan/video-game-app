@@ -314,15 +314,13 @@ struct PostCardView: View {
     }
     
     private func loadImage() async {
-        // Convert the image_url to a full URL
-        if let url = URL(string: post.image_url) {
-            imageURL = url
-        } else {
-            // If it's a relative path, construct the full URL
-            // This assumes you have a base URL for your images
-            let baseURL = "https://your-project.supabase.co/storage/v1/object/public/photos/"
-            imageURL = URL(string: baseURL + post.image_url)
-        }
+        // The image_url from your database is already the relative path
+        // We need to construct the full Supabase storage URL
+        let baseURL = "https://rpcbybhyxirakxtvlhhn.supabase.co/storage/v1/object/public/photos/"
+        let fullURLString = baseURL + post.image_url
+        imageURL = URL(string: fullURLString)
+        
+        print("🔗 Loading image from: \(fullURLString)")
     }
 }
 
@@ -592,7 +590,7 @@ struct UserProfileView: View {
             } else {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 3), spacing: 2) {
                     ForEach(profileViewModel.posts) { post in
-                        AsyncImage(url: URL(string: post.image_url)) { image in
+                        AsyncImage(url: constructImageURL(post.image_url)) { image in
                             image
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
@@ -607,6 +605,16 @@ struct UserProfileView: View {
             }
         }
     }
+}
+
+// MARK: - Helper Functions
+
+private func constructImageURL(_ imagePath: String) -> URL? {
+    // The imagePath from your database is already the relative path
+    // We need to construct the full Supabase storage URL
+    let baseURL = "https://rpcbybhyxirakxtvlhhn.supabase.co/storage/v1/object/public/photos/"
+    let fullURLString = baseURL + imagePath
+    return URL(string: fullURLString)
 }
 
 // MARK: - User Profile ViewModel

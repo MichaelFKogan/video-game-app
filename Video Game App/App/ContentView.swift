@@ -42,8 +42,13 @@ struct ContentView: View {
             // 📓 Daily Entries
                     // Add this to your existing ContentView tab structure
                     FeedView(client: SupabaseManager.shared.client)
-                    .tabItem {Label("Home", systemImage: "photo.on.rectangle.angled")}
+                    .tabItem {Label("Home", systemImage: "house")}
                     .tag(0)
+                
+//            // 🐛 Debug Tab (temporary)
+//                DebugFeedTest()
+//                    .tabItem {Label("Debug", systemImage: "ladybug")}
+//                    .tag(5)
                 
             // 📓 Daily Entries
                 AuthGuard {
