@@ -5,6 +5,7 @@ struct Photo: Codable {
     let id: UUID
     let user_id: UUID
     let image_url: String
+    let title: String?
     let description: String?
     let is_public: Bool
     let created_at: Date
@@ -14,6 +15,7 @@ struct NewPhoto: Encodable {
     let user_id: UUID
     let image_url: String
     let storage_path: String
+    let title: String
     let description: String
     let is_public: Bool
 }
@@ -29,6 +31,7 @@ class PhotoService {
     /// Uploads a Runware-generated image to Supabase storage,
     /// inserts a row in `photos` table, and returns a public URL for display.
     func saveRunwareImage(runwareURL: URL,
+                          title: String? = nil,
                           description: String? = nil,
                           isPublic: Bool = true) async throws -> String {
         
@@ -66,6 +69,7 @@ class PhotoService {
             user_id: userUUID,
             image_url: objectKey,   // ✅ matches actual Storage key
             storage_path: objectKey,
+            title: title ?? "",
             description: description ?? "",
             is_public: isPublic
         )

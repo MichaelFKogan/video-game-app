@@ -72,9 +72,9 @@ Modify your existing photo upload to also create a post in the feed:
 
 ```swift
 // In your existing PhotoService or wherever you handle photo uploads
-func uploadPhotoAndCreatePost(imageData: Data, description: String?) async throws {
+func uploadPhotoAndCreatePost(imageData: Data, title: String?, description: String?) async throws {
     // Your existing photo upload logic...
-    let photoURL = try await saveRunwareImage(runwareURL: imageURL, description: description)
+    let photoURL = try await saveRunwareImage(runwareURL: imageURL, title: title, description: description)
     
     // Now also create a post in the feed
     let feedService = FeedService(client: SupabaseManager.shared.client)

@@ -199,7 +199,8 @@ struct PhotoReviewView: View {
                             let service = PhotoService(client: supabase)
                             _ = try await service.saveRunwareImage(
                                 runwareURL: runwareURL,
-                                description: title.trimmingCharacters(in: .whitespacesAndNewlines)
+                                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                                description: description.trimmingCharacters(in: .whitespacesAndNewlines)
                             )
                             
                             await galleryViewModel.refreshFromSupabase()
