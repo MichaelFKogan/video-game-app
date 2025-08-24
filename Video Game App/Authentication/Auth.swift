@@ -3,10 +3,8 @@ import Supabase
 import Auth
 
 // Initialize Supabase client
-let supabase = SupabaseClient(
-    supabaseURL: URL(string: "https://rpcbybhyxirakxtvlhhn.supabase.co")!,
-    supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwY2J5Ymh5eGlyYWt4dHZsaGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NDI3MjQsImV4cCI6MjA3MTExODcyNH0.ceu3sA4HS5hYhRBvTlbcRaMpUXS_eRxLpNG-JrCiHRc"
-)
+// Shared Supabase client
+let supabase = SupabaseManager.shared.client
 
 struct Auth: View {
     @State private var email = ""

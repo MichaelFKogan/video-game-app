@@ -83,7 +83,7 @@ class FeedService {
             """)
             .eq("is_public", value: true)
             .order("created_at", ascending: false)
-            .range(offset, offset + limit - 1)
+            .range(from: offset, to: offset + limit - 1)
             .execute()
             .value
         
@@ -107,7 +107,7 @@ class FeedService {
             .eq("user_id", value: userId)
             .eq("is_public", value: true)
             .order("created_at", ascending: false)
-            .range(offset, offset + limit - 1)
+            .range(from: offset, to: offset + limit - 1)
             .execute()
             .value
         
@@ -253,7 +253,7 @@ class FeedService {
             """)
             .eq("post_id", value: postId)
             .order("created_at", ascending: true)
-            .range(offset, offset + limit - 1)
+            .range(from: offset, to: offset + limit - 1)
             .execute()
             .value
         

@@ -636,20 +636,3 @@ class UserProfileViewModel: ObservableObject {
         isLoading = false
     }
 }
-
-// MARK: - Supabase Manager (You'll need to create this)
-
-class SupabaseManager {
-    static let shared = SupabaseManager()
-    
-    let client: SupabaseClient
-    
-    private init() {
-        // Initialize your Supabase client here
-        // Replace with your actual Supabase URL and anon key
-        self.client = SupabaseClient(
-            supabaseURL: URL(string: "YOUR_SUPABASE_URL")!,
-            supabaseKey: "YOUR_SUPABASE_ANON_KEY"
-        )
-    }
-}

@@ -15,7 +15,7 @@ enum PromptLibrary {
         Convert this image to a stylized game art similar to Grand Theft Auto. Preserve the exact composition, existing subjects, background, proportions, and perspective. Only change the rendering style similar to GTA: cinematic lighting, slightly desaturated colors, stylized textures. Do not add or remove any objects or people. Keep the scene exactly as-is.
         """,
         "Anime": """
-        Become an anime image
+        Convert this image into a Studio Ghibli-style illustration. Keep all facial features, hair style and color, clothing, pose, and background exactly the same. Only apply Ghibli-style rendering: soft colors, whimsical shading, cinematic lighting, and hand-painted textures. Preserve proportions, perspective, and all character and environmental details exactly.
         """
     ]
 
