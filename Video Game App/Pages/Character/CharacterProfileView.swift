@@ -8,12 +8,6 @@
 import SwiftUI
 import Supabase
 
-struct UserProfile: Codable {
-    let id: String
-    let username: String
-    let profilePhotoURL: String?
-}
-
 
 struct CharacterProfileView: View {
     @AppStorage("accentColorName") private var accentColorName: String = "blue"
@@ -200,7 +194,7 @@ struct CharacterProfileView: View {
     // MARK: - Load profile from Supabase
 
     func saveProfile() async {
-        guard let userID = session.user?.id.uuidString else {
+        guard let userID = session.user?.id else {
             print("No user ID found")
             return
         }
@@ -226,7 +220,7 @@ struct CharacterProfileView: View {
     }
 
     func isUsernameAvailable(_ username: String) async -> Bool {
-        guard let currentUserID = session.user?.id.uuidString else { return false }
+        guard let currentUserID = session.user?.id else { return false }
 
         do {
             let response = try await supabase.database
@@ -247,7 +241,7 @@ struct CharacterProfileView: View {
 
 
     func checkProfileExists() async {
-        guard let userID = session.user?.id.uuidString else { return }
+        guard let userID = session.user?.id else { return }
 
         do {
             let response = try await supabase.database
@@ -270,7 +264,7 @@ struct CharacterProfileView: View {
     }
 
     func loadProfile() async {
-        guard let userID = session.user?.id.uuidString else { return }
+        guard let userID = session.user?.id else { return }
 
         do {
             let response = try await supabase.database
@@ -284,7 +278,7 @@ struct CharacterProfileView: View {
             let userProfile = try JSONDecoder().decode(UserProfile.self, from: response.data)
 
             await MainActor.run {
-                name = userProfile.username
+                name = userProfile.username ?? ""
                 saveOriginalValues()
 
                 if let profileURL = userProfile.profilePhotoURL,

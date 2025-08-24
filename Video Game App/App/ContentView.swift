@@ -40,13 +40,15 @@ struct ContentView: View {
 //                    .tag(1)
                 
             // 📓 Daily Entries
-                AuthGuard {
-//                    DailyEntries()
-                    GalleryView()
-                        .environmentObject(galleryViewModel)
-                }
-                    .tabItem {Label("Storyline", systemImage: "book.closed")}
+                    // Add this to your existing ContentView tab structure
+                    FeedView(client: SupabaseManager.shared.client)
+                    .tabItem {Label("Home", systemImage: "house")}
                     .tag(0)
+                
+//            // 🐛 Debug Tab (temporary)
+//                DebugFeedTest()
+//                    .tabItem {Label("Debug", systemImage: "ladybug")}
+//                    .tag(5)
                 
             // 📓 Daily Entries
                 AuthGuard {
@@ -54,7 +56,7 @@ struct ContentView: View {
                     GalleryView()
                         .environmentObject(galleryViewModel)
                 }
-                    .tabItem {Label("Photo Albums", systemImage: "photo.on.rectangle")}
+                    .tabItem {Label("Photos", systemImage: "photo.on.rectangle")}
                     .tag(1)
                 
             // 📷 Camera
