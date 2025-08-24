@@ -22,6 +22,7 @@ struct CharacterProfileView: View {
     @State private var showAlert = false
     @State private var usernameAvailable = true
     @State private var isEditing = false
+    @State private var showProfilePhotoPicker = false
 
     var body: some View {
         NavigationView {
@@ -30,14 +31,28 @@ struct CharacterProfileView: View {
                     
                     VStack{
                         HStack(alignment: .top){
-                            // Profile photo
-                            profileImage?
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 85, height: 85)
-                                .foregroundColor(accentColorName.toColor())
-                                .clipShape(Circle())
-                                .shadow(radius: 5)
+                            // Profile photo with edit button
+                            ZStack(alignment: .bottomTrailing) {
+                                profileImage?
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 85, height: 85)
+                                    .foregroundColor(accentColorName.toColor())
+                                    .clipShape(Circle())
+                                    .shadow(radius: 5)
+                                
+                                // Edit button overlay
+                                Button(action: {
+                                    showProfilePhotoPicker = true
+                                }) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(accentColorName.toColor())
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                }
+                                .offset(x: 5, y: 5)
+                            }
                             Spacer()
                             
                             
@@ -124,6 +139,14 @@ struct CharacterProfileView: View {
         .task {
             await checkProfileExists()
             await loadProfile()  // only load profile if it exists
+        }
+        .sheet(isPresented: $showProfilePhotoPicker) {
+            ProfilePhotoPickerView { imageURL in
+                // Update the profile image when a new photo is selected
+                Task {
+                    await loadProfileImage(from: imageURL)
+                }
+            }
         }
 
     }
@@ -281,15 +304,29 @@ struct CharacterProfileView: View {
                 name = userProfile.username ?? ""
                 saveOriginalValues()
 
-                if let profileURL = userProfile.profilePhotoURL,
-                   let url = URL(string: profileURL),
-                   let imageData = try? Data(contentsOf: url),
-                   let uiImage = UIImage(data: imageData) {
-                    profileImage = Image(uiImage: uiImage)
+                if let profileURL = userProfile.profilePhotoURL {
+                    Task {
+                        await loadProfileImage(from: profileURL)
+                    }
                 }
             }
         } catch {
             print("Failed to load profile:", error)
+        }
+    }
+    
+    func loadProfileImage(from urlString: String) async {
+        guard let url = URL(string: urlString) else { return }
+        
+        do {
+            let imageData = try Data(contentsOf: url)
+            if let uiImage = UIImage(data: imageData) {
+                await MainActor.run {
+                    profileImage = Image(uiImage: uiImage)
+                }
+            }
+        } catch {
+            print("Failed to load profile image: \(error)")
         }
     }
 

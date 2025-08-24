@@ -24,7 +24,7 @@ struct FeedView: View {
                     feedContent
                 }
             }
-            .navigationTitle("Feed")
+//            .navigationTitle("Feed")
             .navigationBarTitleDisplayMode(.large)
             .refreshable {
                 await viewModel.refreshFeed()
@@ -182,9 +182,11 @@ struct PostCardView: View {
                     .aspectRatio(contentMode: .fill)
             } placeholder: {
                 Image(systemName: "person.circle.fill")
+                    .resizable()
+                    .scaledToFill()
                     .foregroundColor(.gray)
             }
-            .frame(width: 40, height: 40)
+            .frame(width: 50, height: 50)
             .clipShape(Circle())
             
             VStack(alignment: .leading, spacing: 2) {
@@ -545,7 +547,8 @@ struct UserProfileView: View {
                     .aspectRatio(contentMode: .fill)
             } placeholder: {
                 Image(systemName: "person.circle.fill")
-                    .font(.system(size: 22))
+                    .resizable()
+                    .scaledToFill()
                     .foregroundColor(.gray)
             }
             .frame(width: 80, height: 80)
