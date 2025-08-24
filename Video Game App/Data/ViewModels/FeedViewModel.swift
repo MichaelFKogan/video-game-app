@@ -134,9 +134,9 @@ class FeedViewModel: ObservableObject {
     // MARK: - Post Management
     
     /// Creates a new post
-    func createPost(imageUrl: String, description: String?) async -> Bool {
+    func createPost(imageUrl: String, title: String?, description: String?) async -> Bool {
         do {
-            let newPost = try await feedService.createPost(imageUrl: imageUrl, description: description)
+            let newPost = try await feedService.createPost(imageUrl: imageUrl, title: title, description: description)
             
             // Add the new post to the beginning of the feed
             posts.insert(newPost, at: 0)

@@ -9,33 +9,19 @@ struct GalleryDetailView: View {
     @State private var showingDeleteAlert = false
     @State private var isDeleting = false
     
-    // Mock data for demo - in real app this would come from the photo object
-    private var mockTitle: String {
-        let titles = [
-            "Morning Coffee Quest",
-            "City Exploration Adventure",
-            "Work From Home Mission",
-            "Grocery Shopping Run",
-            "Evening Walk Discovery",
-            "Lunch Break Escape",
-            "Weekend Warrior Challenge",
-            "Daily Commute Journey"
-        ]
-        return titles.randomElement() ?? "Life Adventure"
+    // Real data from photo object
+    private var displayTitle: String {
+        if let photo = photo, let title = photo.title, !title.isEmpty {
+            return title
+        }
+        return "Untitled Adventure"
     }
     
-    private var mockDescription: String {
-        let descriptions = [
-            "Started the day with a perfect cup of coffee and some quiet reflection.",
-            "Explored the bustling city streets and discovered hidden gems around every corner.",
-            "Another productive day working from the comfort of home office.",
-            "Successfully navigated the grocery store maze and emerged victorious with supplies.",
-            "Took an evening stroll and found peace in the simple moments of life.",
-            "Escaped the daily grind for a quick lunch break and some fresh air.",
-            "Embraced the weekend warrior spirit with some outdoor activities.",
-            "Made the daily commute feel like an adventure through the urban landscape."
-        ]
-        return descriptions.randomElement() ?? "Another day in the adventure of life."
+    private var displayDescription: String {
+        if let photo = photo, let description = photo.description, !description.isEmpty {
+            return description
+        }
+        return ""
     }
     
     private var mockXP: Int {
@@ -62,7 +48,7 @@ struct GalleryDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     // Title and XP
                     HStack {
-                        Text(mockTitle)
+                        Text(displayTitle)
                             .font(.title2)
                             .fontWeight(.bold)
                         
@@ -94,11 +80,13 @@ struct GalleryDetailView: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    // Description
-                    Text(mockDescription)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                        .lineLimit(nil)
+                    // Description (only show if it exists)
+                    if !displayDescription.isEmpty {
+                        Text(displayDescription)
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .lineLimit(nil)
+                    }
                     
                     // Stats Section
                     VStack(alignment: .leading, spacing: 12) {

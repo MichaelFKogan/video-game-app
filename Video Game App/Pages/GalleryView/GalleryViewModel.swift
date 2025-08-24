@@ -11,6 +11,7 @@ class GalleryViewModel: ObservableObject {
     private let client: SupabaseClient
     private let cacheKey = "cachedGalleryImages"  // UserDefaults key
     private let cacheKeyPaths = "cachedGalleryPaths"  // Cache the actual image paths
+    private let cacheKeyPhotos = "cachedGalleryPhotos"  // Cache the full photo objects
     
     init(client: SupabaseClient) {
         self.client = client
@@ -25,16 +26,27 @@ class GalleryViewModel: ObservableObject {
             self.galleryImages = decoded
             print("✅ Loaded \(decoded.count) cached images")
         }
+        
+        // Load cached photo objects (including title/description)
+        if let data = UserDefaults.standard.data(forKey: cacheKeyPhotos),
+           let decoded = try? JSONDecoder().decode([Photo].self, from: data) {
+            self.photos = decoded
+            print("✅ Loaded \(decoded.count) cached photo objects")
+        }
     }
     
     // MARK: - Save to local cache
-    private func saveToCache(_ images: [String], paths: [String]) {
+    private func saveToCache(_ images: [String], paths: [String], photos: [Photo]) {
         if let encoded = try? JSONEncoder().encode(images) {
             UserDefaults.standard.set(encoded, forKey: cacheKey)
             print("💾 Saved \(images.count) images to cache")
         }
         if let encodedPaths = try? JSONEncoder().encode(paths) {
             UserDefaults.standard.set(encodedPaths, forKey: cacheKeyPaths)
+        }
+        if let encodedPhotos = try? JSONEncoder().encode(photos) {
+            UserDefaults.standard.set(encodedPhotos, forKey: cacheKeyPhotos)
+            print("💾 Saved \(photos.count) photo objects to cache")
         }
     }
     
@@ -85,7 +97,7 @@ class GalleryViewModel: ObservableObject {
                 if publicURLs != self.galleryImages {
                     self.galleryImages = publicURLs
                     self.photos = rows
-                    saveToCache(publicURLs, paths: freshPaths)
+                    saveToCache(publicURLs, paths: freshPaths, photos: rows)
                     print("🔄 Updated gallery with \(publicURLs.count) new images")
                 } else {
                     print("✅ URLs are the same, no update needed")
@@ -170,7 +182,7 @@ class GalleryViewModel: ObservableObject {
                 
                 // Update cache
                 let freshPaths = photos.map { $0.image_url }
-                saveToCache(galleryImages, paths: freshPaths)
+                saveToCache(galleryImages, paths: freshPaths, photos: photos)
                 
                 print("✅ Photo deleted successfully from local state")
             }
