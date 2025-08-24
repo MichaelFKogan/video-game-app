@@ -22,6 +22,12 @@ struct Post: Codable, Identifiable {
     var comment_count: Int?
     var is_liked_by_current_user: Bool?
     
+    // Computed property for full image URL
+    var fullImageURL: URL? {
+        let baseURL = "https://rpcbybhyxirakxtvlhhn.supabase.co/storage/v1/object/public/photos/"
+        return URL(string: baseURL + image_url)
+    }
+    
     // MARK: - Custom Coding Keys to handle storage_path as image_url
     enum CodingKeys: String, CodingKey {
         case id
@@ -77,9 +83,34 @@ struct Post: Codable, Identifiable {
 
 struct Like: Codable {
     let id: UUID
-    let post_id: UUID
-    let user_id: UUID
-    let created_at: Date
+    let post_id: UUID?
+    let user_id: UUID?
+    let created_at: Date?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case post_id
+        case user_id
+        case created_at
+    }
+    
+    // Initializer for creating new Like objects
+    init(id: UUID, post_id: UUID, user_id: UUID, created_at: Date) {
+        self.id = id
+        self.post_id = post_id
+        self.user_id = user_id
+        self.created_at = created_at
+    }
+    
+    // Decoder initializer for handling optional fields
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        post_id = try container.decodeIfPresent(UUID.self, forKey: .post_id)
+        user_id = try container.decodeIfPresent(UUID.self, forKey: .user_id)
+        created_at = try container.decodeIfPresent(Date.self, forKey: .created_at) ?? Date()
+    }
 }
 
 struct Comment: Codable, Identifiable {
@@ -123,6 +154,25 @@ class FeedService {
     func fetchPublicFeed(limit: Int = 20, offset: Int = 0) async throws -> [Post] {
         print("🔄 Fetching public feed with limit: \(limit), offset: \(offset)")
         
+        // Try the optimized JOIN query first
+        do {
+            return try await fetchPublicFeedWithJoins(limit: limit, offset: offset)
+        } catch {
+            print("⚠️ JOIN query failed, falling back to original method: \(error)")
+            return try await fetchPublicFeedFallback(limit: limit, offset: offset)
+        }
+    }
+    
+    /// Optimized version using JOINs
+    private func fetchPublicFeedWithJoins(limit: Int = 20, offset: Int = 0) async throws -> [Post] {
+        // Since JOINs are failing, throw an error to force fallback
+        throw NSError(domain: "FeedService", code: 500, userInfo: [
+            NSLocalizedDescriptionKey: "JOIN queries not supported, using fallback method"
+        ])
+    }
+    
+    /// Fallback version using original N+1 approach
+    private func fetchPublicFeedFallback(limit: Int = 20, offset: Int = 0) async throws -> [Post] {
         // First, get the basic posts
         let response = try await client.database
             .from("photos")
@@ -133,11 +183,6 @@ class FeedService {
             .execute()
         
         print("📊 Raw response data: \(String(describing: response.data))")
-        
-        // Print the actual JSON string for debugging
-        if let jsonString = String(data: response.data, encoding: .utf8) {
-//            print("🔍 JSON String: \(jsonString)")
-        }
         
         // Decode the response data directly
         let posts: [Post]
@@ -176,44 +221,63 @@ class FeedService {
         // Then, enrich each post with user profile data and engagement metrics
         var enrichedPosts: [Post] = []
         
-        for var post in posts {
-//            print("🔄 Enriching post: \(post.id)")
-            
-            do {
-                // Get user profile data
-                if let profile = try await fetchUserProfile(userId: post.user_id) {
-                    post.user_username = profile.username
-                    post.user_avatar_url = profile.avatar_url
-                    post.user_display_name = profile.display_name
-//                    print("✅ Found profile for user: \(profile.username ?? "unknown")")
-                } else {
-                    print("⚠️ No profile found for user: \(post.user_id)")
+        // Create a task group to process posts in parallel
+        await withTaskGroup(of: (Int, Post).self) { group in
+            for (index, post) in posts.enumerated() {
+                group.addTask {
+                    var enrichedPost = post
+                    
+                    do {
+                        // Get user profile data
+                        if let profile = try await self.fetchUserProfile(userId: post.user_id) {
+                            enrichedPost.user_username = profile.username
+                            enrichedPost.user_avatar_url = profile.avatar_url
+                            enrichedPost.user_display_name = profile.display_name
+//                            print("✅ Enriched post \(post.id) with user: \(profile.username ?? "nil")")
+                        } else {
+                            print("⚠️ No profile found for user: \(post.user_id)")
+                        }
+                        
+                        // Get like count
+                        let likes: [Like] = try await self.client.database
+                            .from("likes")
+                            .select("id")
+                            .eq("post_id", value: post.id)
+                            .execute()
+                            .value
+                        enrichedPost.like_count = likes.count
+                        
+                        // Get comment count
+                        let comments: [Comment] = try await self.client.database
+                            .from("comments")
+                            .select("id")
+                            .eq("post_id", value: post.id)
+                            .execute()
+                            .value
+                        enrichedPost.comment_count = comments.count
+                        
+                        return (index, enrichedPost)
+                    } catch {
+                        print("❌ Error enriching post \(post.id): \(error)")
+                        // Return the post even if enrichment fails
+                        return (index, enrichedPost)
+                    }
                 }
-                
-                // Get like count
-                let likes: [Like] = try await client.database
-                    .from("likes")
-                    .select("id")
-                    .eq("post_id", value: post.id)
-                    .execute()
-                    .value
-                post.like_count = likes.count
-                
-                // Get comment count
-                let comments: [Comment] = try await client.database
-                    .from("comments")
-                    .select("id")
-                    .eq("post_id", value: post.id)
-                    .execute()
-                    .value
-                post.comment_count = comments.count
-                
-                enrichedPosts.append(post)
-            } catch {
-                print("❌ Error enriching post \(post.id): \(error)")
-                // Still add the post even if enrichment fails
-                enrichedPosts.append(post)
             }
+            
+            // Collect results in order
+            for await (index, enrichedPost) in group {
+                enrichedPosts.append(enrichedPost)
+            }
+        }
+        
+        // Sort by original order
+        enrichedPosts.sort { post1, post2 in
+            if let index1 = posts.firstIndex(where: { $0.id == post1.id }),
+               let index2 = posts.firstIndex(where: { $0.id == post2.id }) {
+                return index1 < index2
+            }
+            return false
         }
         
         print("✅ Enriched \(enrichedPosts.count) posts with user data and engagement metrics")
@@ -404,15 +468,55 @@ class FeedService {
             return false
         }
         
-        let likes: [Like] = try await client.database
-            .from("likes")
-            .select()
-            .eq("post_id", value: postId)
-            .eq("user_id", value: session.user.id)
-            .execute()
-            .value
-        
-        return !likes.isEmpty
+        do {
+            let response = try await client.database
+                .from("likes")
+                .select("id")
+                .eq("post_id", value: postId)
+                .eq("user_id", value: session.user.id)
+                .execute()
+            
+            // Try to decode as Like objects first
+            if let likes: [Like] = try? JSONDecoder().decode([Like].self, from: response.data) {
+                return !likes.isEmpty
+            }
+            
+            // Fallback: check if the JSON array has any elements
+            if let jsonArray = try? JSONSerialization.jsonObject(with: response.data) as? [[String: Any]] {
+                return !jsonArray.isEmpty
+            }
+            
+            return false
+        } catch {
+            print("❌ Error checking like status for post \(postId): \(error)")
+            return false
+        }
+    }
+    
+    /// Gets the total like count for a post
+    func getLikeCount(for postId: UUID) async throws -> Int {
+        do {
+            let response = try await client.database
+                .from("likes")
+                .select("id")
+                .eq("post_id", value: postId)
+                .execute()
+            
+            // Try to decode as Like objects first
+            if let likes: [Like] = try? JSONDecoder().decode([Like].self, from: response.data) {
+                return likes.count
+            }
+            
+            // Fallback: count the raw JSON array
+            if let jsonArray = try? JSONSerialization.jsonObject(with: response.data) as? [[String: Any]] {
+                return jsonArray.count
+            }
+            
+            return 0
+        } catch {
+            print("❌ Error getting like count for post \(postId): \(error)")
+            return 0
+        }
     }
     
     // MARK: - Comments
@@ -540,11 +644,15 @@ class FeedService {
     
     /// Fetches user profile by ID
     func fetchUserProfile(userId: UUID) async throws -> UserProfile? {
+//        print("🔍 Fetching profile for user ID: \(userId)")
+        
         let response = try await client.database
             .from("profiles")
             .select()
             .eq("id", value: userId)
             .execute()
+        
+//        print("📊 Profile response data: \(String(describing: response.data))")
         
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .custom { decoder in
@@ -570,8 +678,33 @@ class FeedService {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Date string does not match expected format")
         }
         
-        let profiles: [UserProfile] = try decoder.decode([UserProfile].self, from: response.data)
-        return profiles.first
+        do {
+            let profiles: [UserProfile] = try decoder.decode([UserProfile].self, from: response.data)
+            let profile = profiles.first
+//            print("✅ Found profile: \(profile?.username ?? "nil")")
+            return profile
+        } catch {
+            print("❌ Error decoding profile for user \(userId): \(error)")
+            
+            // Try to decode as raw JSON to see what we're getting
+            if let jsonString = String(data: response.data, encoding: .utf8) {
+                print("🔍 Raw JSON: \(jsonString)")
+            }
+            
+            // Try fallback decoding
+            if let jsonArray = try? JSONSerialization.jsonObject(with: response.data) as? [[String: Any]],
+               let firstProfile = jsonArray.first {
+                print("🔍 Raw profile data: \(firstProfile)")
+                
+                // Try to create a UserProfile from the raw data
+                if let profile = UserProfile.from(dictionary: firstProfile) {
+                    print("✅ Created profile from raw data: \(profile.username ?? "nil")")
+                    return profile
+                }
+            }
+            
+            return nil
+        }
     }
     
     /// Debug function to check database structure
@@ -596,6 +729,14 @@ class FeedService {
                 .execute()
             
             print("📊 Profiles table sample data: \(String(describing: profilesResponse.data))")
+            
+            // Check if there are any profiles at all
+            let allProfilesResponse = try await client.database
+                .from("profiles")
+                .select("id, username, display_name, avatar_url")
+                .execute()
+            
+            print("📊 All profiles count: \(String(describing: allProfilesResponse.data))")
             
         } catch {
             print("❌ Error checking database structure: \(error)")

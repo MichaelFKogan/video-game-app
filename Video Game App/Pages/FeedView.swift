@@ -29,8 +29,13 @@ struct FeedView: View {
             .refreshable {
                 await viewModel.refreshFeed()
             }
-            .task {
-                await viewModel.loadFeed()
+            .onAppear {
+                // Load feed immediately when view appears
+                if viewModel.posts.isEmpty {
+                    Task {
+                        await viewModel.loadFeed()
+                    }
+                }
             }
             .sheet(isPresented: $showingComments) {
                 if let post = selectedPost {
@@ -132,8 +137,6 @@ struct PostCardView: View {
     let onCommentTapped: () -> Void
     let onUsernameTapped: () -> Void
     
-    @State private var imageURL: URL?
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
@@ -159,15 +162,13 @@ struct PostCardView: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-        .task {
-            await loadImage()
-        }
+
     }
     
     private var postHeader: some View {
         HStack {
             // User Avatar
-            AsyncImage(url: viewModel.getAvatarURL(for: post)) { image in
+            CachedAsyncImage(url: viewModel.getAvatarURL(for: post)) { image in
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -211,29 +212,17 @@ struct PostCardView: View {
     }
     
     private var postImage: some View {
-        Group {
-            if let imageURL = imageURL {
-                AsyncImage(url: imageURL) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                } placeholder: {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .overlay(
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                        )
-                }
-            } else {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .overlay(
-                        Image(systemName: "photo")
-                            .font(.largeTitle)
-                            .foregroundColor(.gray)
-                    )
-            }
+        CachedAsyncImage(url: post.fullImageURL) { image in
+            image
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        } placeholder: {
+            Rectangle()
+                .fill(Color.gray.opacity(0.2))
+                .overlay(
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                )
         }
         .frame(maxWidth: .infinity)
         .frame(height: 400)
@@ -313,15 +302,7 @@ struct PostCardView: View {
         return false
     }
     
-    private func loadImage() async {
-        // The image_url from your database is already the relative path
-        // We need to construct the full Supabase storage URL
-        let baseURL = "https://rpcbybhyxirakxtvlhhn.supabase.co/storage/v1/object/public/photos/"
-        let fullURLString = baseURL + post.image_url
-        imageURL = URL(string: fullURLString)
-        
-        print("🔗 Loading image from: \(fullURLString)")
-    }
+
 }
 
 // MARK: - Comments View
@@ -419,7 +400,7 @@ struct CommentRowView: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            AsyncImage(url: URL(string: comment.user_avatar_url ?? "")) { image in
+            CachedAsyncImage(url: URL(string: comment.user_avatar_url ?? "")) { image in
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -544,7 +525,7 @@ struct UserProfileView: View {
     
     private func profileHeader(_ profile: UserProfile) -> some View {
         VStack(spacing: 16) {
-            AsyncImage(url: URL(string: profile.avatar_url ?? "")) { image in
+            CachedAsyncImage(url: URL(string: profile.avatar_url ?? "")) { image in
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -590,7 +571,7 @@ struct UserProfileView: View {
             } else {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 3), spacing: 2) {
                     ForEach(profileViewModel.posts) { post in
-                        AsyncImage(url: constructImageURL(post.image_url)) { image in
+                        CachedAsyncImage(url: post.fullImageURL) { image in
                             image
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
@@ -608,14 +589,6 @@ struct UserProfileView: View {
 }
 
 // MARK: - Helper Functions
-
-private func constructImageURL(_ imagePath: String) -> URL? {
-    // The imagePath from your database is already the relative path
-    // We need to construct the full Supabase storage URL
-    let baseURL = "https://rpcbybhyxirakxtvlhhn.supabase.co/storage/v1/object/public/photos/"
-    let fullURLString = baseURL + imagePath
-    return URL(string: fullURLString)
-}
 
 // MARK: - User Profile ViewModel
 

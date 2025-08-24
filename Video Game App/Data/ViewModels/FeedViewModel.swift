@@ -26,14 +26,21 @@ class FeedViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
+        // Debug database structure
+        await feedService.debugDatabaseStructure()
+        
         do {
             let newPosts = try await feedService.fetchPublicFeed(limit: postsPerPage, offset: 0)
+            
+            // Update posts immediately to show content faster
             posts = newPosts
             currentOffset = newPosts.count
             hasMorePosts = newPosts.count == postsPerPage
             
-            // Check like status for each post
-            await updateLikeStatusForPosts()
+            // Check like status for each post in the background
+            Task {
+                await updateLikeStatusForPosts()
+            }
             
         } catch {
             errorMessage = "Failed to load feed: \(error.localizedDescription)"
@@ -50,12 +57,16 @@ class FeedViewModel: ObservableObject {
         
         do {
             let newPosts = try await feedService.fetchPublicFeed(limit: postsPerPage, offset: currentOffset)
+            
+            // Update posts immediately to show content faster
             posts.append(contentsOf: newPosts)
             currentOffset += newPosts.count
             hasMorePosts = newPosts.count == postsPerPage
             
-            // Check like status for new posts
-            await updateLikeStatusForPosts()
+            // Check like status for new posts in the background
+            Task {
+                await updateLikeStatusForPosts()
+            }
             
         } catch {
             errorMessage = "Failed to load more posts: \(error.localizedDescription)"
@@ -82,12 +93,9 @@ class FeedViewModel: ObservableObject {
             if let index = posts.firstIndex(where: { $0.id == post.id }) {
                 posts[index].is_liked_by_current_user = isLiked
                 
-                // Update like count
-                if isLiked {
-                    posts[index].like_count = (posts[index].like_count ?? 0) + 1
-                } else {
-                    posts[index].like_count = max(0, (posts[index].like_count ?? 1) - 1)
-                }
+                // Get the updated like count from the server
+                let updatedLikeCount = try await feedService.getLikeCount(for: post.id)
+                posts[index].like_count = updatedLikeCount
             }
         } catch {
             errorMessage = "Failed to update like: \(error.localizedDescription)"
@@ -96,13 +104,29 @@ class FeedViewModel: ObservableObject {
     
     /// Updates like status for all posts
     private func updateLikeStatusForPosts() async {
-        for (index, post) in posts.enumerated() {
-            do {
-                let isLiked = try await feedService.isPostLikedByCurrentUser(postId: post.id)
-                posts[index].is_liked_by_current_user = isLiked
-            } catch {
-                // Silently fail for like status updates
-                print("Failed to check like status for post \(post.id): \(error)")
+        // Use TaskGroup to run queries in parallel
+        await withTaskGroup(of: (Int, Bool, Int).self) { group in
+            for (index, post) in posts.enumerated() {
+                group.addTask {
+                    do {
+                        let isLiked = try await self.feedService.isPostLikedByCurrentUser(postId: post.id)
+                        
+                        // Also get the total like count for this post
+                        let likeCount = try await self.feedService.getLikeCount(for: post.id)
+                        
+                        return (index, isLiked, likeCount)
+                    } catch {
+                        print("Failed to check like status for post \(post.id): \(error)")
+                        return (index, false, 0)
+                    }
+                }
+            }
+            
+            for await (index, isLiked, likeCount) in group {
+                if index < self.posts.count {
+                    self.posts[index].is_liked_by_current_user = isLiked
+                    self.posts[index].like_count = likeCount
+                }
             }
         }
     }
