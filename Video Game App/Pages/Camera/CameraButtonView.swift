@@ -22,7 +22,7 @@ struct CameraButtonView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
+//            ScrollView {
                 VStack(spacing: 0) {
 
                     // Live Camera
@@ -31,6 +31,7 @@ struct CameraButtonView: View {
                         .shadow(radius: 6)
                         .frame(height: UIScreen.main.bounds.height * 0.55)
                         .padding(.horizontal)
+                        .padding(.top, 60)
 
                     Spacer()
 
@@ -77,11 +78,13 @@ struct CameraButtonView: View {
                         .allowsHitTesting(true)
                     }
                     .padding(.horizontal)
-                    .padding(.vertical, 8)
-
-                    Spacer(minLength: 120)
+                    .padding(.bottom, 40)
+                    
+                    Divider()
+                        .padding(.bottom, 6)
                 }
-            }
+            
+//            }
             .onAppear {
                 cameraService.startSession()
             }
