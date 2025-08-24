@@ -339,15 +339,3 @@ class FeedService {
         return profiles.first
     }
 }
-
-// MARK: - User Profile Model
-
-struct UserProfile: Codable {
-    let id: UUID
-    let username: String?
-    let display_name: String?
-    let avatar_url: String?
-    let bio: String?
-    let created_at: Date
-    let updated_at: Date
-}
