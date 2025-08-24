@@ -80,6 +80,7 @@ func uploadPhotoAndCreatePost(imageData: Data, title: String?, description: Stri
     let feedService = FeedService(client: SupabaseManager.shared.client)
     _ = try await feedService.createPost(
         imageUrl: photoURL,
+        title: title,
         description: description,
         isPublic: true
     )
@@ -330,6 +331,7 @@ func uploadPhoto(image: UIImage, description: String?) async {
         let feedService = FeedService(client: SupabaseManager.shared.client)
         _ = try await feedService.createPost(
             imageUrl: photoURL,
+            title: nil, // You can add title parameter here if needed
             description: description,
             isPublic: true
         )

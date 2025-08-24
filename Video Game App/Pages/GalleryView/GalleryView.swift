@@ -42,38 +42,10 @@ struct GalleryView: View {
 //        "https://im.runware.ai/image/ws/2/ii/9139c938-47a8-4957-bffd-b9bf0289279c.jpg"
 //    ]
     
-    struct Activity: Identifiable {
-        let id = UUID()
-        let title: String
-        let xp: Int
-        let emoji: String
-    }
-    
     struct GalleryImage: Identifiable, Hashable {
         let id: UUID
         let url: String
     }
-
-    let sampleActivities = [
-        Activity(title: "Traveling to New York City for a tech conference", xp: 10, emoji: "✈️"),
-        Activity(title: "Completed a 5k run in the morning", xp: 5, emoji: "❤️"),
-        Activity(title: "Read a chapter of a programming book", xp: 3, emoji: "📚"),
-        Activity(title: "Cooked a healthy dinner for the family", xp: 8, emoji: "🥗"),
-        Activity(title: "Attended a SwiftUI meetup and networked", xp: 12, emoji: "🏆"),
-        Activity(title: "Finished a meditation session", xp: 4, emoji: "🧘"),
-        Activity(title: "Explored a new hiking trail", xp: 15, emoji: "🌲"),
-        
-        Activity(title: "Traveling to New York City for a tech conference", xp: 10, emoji: "✈️"),
-        Activity(title: "Completed a 5k run in the morning", xp: 5, emoji: "❤️"),
-        Activity(title: "Read a chapter of a programming book", xp: 3, emoji: "📚"),
-        Activity(title: "Cooked a healthy dinner for the family", xp: 8, emoji: "🥗"),
-        Activity(title: "Attended a SwiftUI meetup and networked", xp: 12, emoji: "🏆"),
-        Activity(title: "Finished a meditation session", xp: 4, emoji: "🧘"),
-        Activity(title: "Explored a new hiking trail", xp: 15, emoji: "🌲"),
-        
-        Activity(title: "Finished a meditation session", xp: 4, emoji: "🧘"),
-        Activity(title: "Explored a new hiking trail", xp: 15, emoji: "🌲")
-    ]
     
     let gridColumns = [
         GridItem(.flexible(), spacing: 2),
@@ -162,22 +134,45 @@ struct GalleryView: View {
                                     LoadingPhotoPlaceholder(width: itemWidth, height: 200)
                                 }
 
-                                // Show actual images
-                                ForEach(viewModel.galleryImages, id: \.self) { url in
+                                // Show actual images with titles and descriptions
+                                ForEach(Array(viewModel.galleryImages.enumerated()), id: \.element) { index, url in
+                                    let photo = viewModel.getPhoto(for: url)
                                     NavigationLink(destination: GalleryDetailView(
                                         imageURL: url,
-                                        photo: viewModel.getPhoto(for: url)
+                                        photo: photo
                                     )
                                     .environmentObject(viewModel)) {
-                                        CachedAsyncImage(url: URL(string: url)) { image in
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: itemWidth, height: 200)
-                                                .clipped()
-                                        } placeholder: {
-                                            ProgressView()
-                                                .frame(width: itemWidth, height: 200)
+                                        VStack(alignment: .leading, spacing: 4) {
+//                                            // Title above image (only show if exists)
+//                                            if let title = photo?.title, !title.isEmpty {
+//                                                Text(title)
+//                                                    .font(.caption)
+//                                                    .fontWeight(.medium)
+//                                                    .foregroundColor(.primary)
+//                                                    .lineLimit(2)
+//                                                    .multilineTextAlignment(.leading)
+//                                            }
+                                            
+                                            // Image
+                                            CachedAsyncImage(url: URL(string: url)) { image in
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: itemWidth, height: 200)
+                                                    .clipped()
+                                            } placeholder: {
+                                                ProgressView()
+                                                    .frame(width: itemWidth, height: 200)
+                                            }
+                                            
+//                                            // Description below image (only show if exists)
+//                                            if let description = photo?.description, !description.isEmpty {
+//                                                Text(description)
+//                                                    .font(.caption2)
+//                                                    .foregroundColor(.secondary)
+//                                                    .lineLimit(2)
+//                                                    .multilineTextAlignment(.leading)
+//                                            }
                                         }
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -195,17 +190,19 @@ struct GalleryView: View {
 
                                 // Show actual images styled like QuestView cards
                                 ForEach(Array(viewModel.galleryImages.enumerated()), id: \.element) { index, url in
-                                    let activity = sampleActivities[index % sampleActivities.count]
+                                    let photo = viewModel.getPhoto(for: url)
                                     NavigationLink(destination: GalleryDetailView(
                                         imageURL: url,
-                                        photo: viewModel.getPhoto(for: url)
+                                        photo: photo
                                     )
                                     .environmentObject(viewModel)) {
                                         VStack(alignment: .leading) {
-                                            // Dummy title
-                                            Text("\(activity.title)")
-                                                .font(.headline)
-                                                .padding(.leading)
+                                            // Real title from photo - ABOVE the image
+                                            if let title = photo?.title, !title.isEmpty {
+                                                Text(title)
+                                                    .font(.headline)
+                                                    .padding(.leading)
+                                            }
 
                                             // Image with XP overlay
                                             ZStack(alignment: .topTrailing) {
@@ -222,10 +219,11 @@ struct GalleryView: View {
                                                         .frame(maxWidth: .infinity)
                                                 }
 
+                                                // XP overlay (using a simple XP value for now)
                                                 HStack(spacing: 4) {
                                                     Image(systemName: "star.fill")
                                                         .foregroundColor(.yellow).opacity(0.8)
-                                                    Text("\(activity.xp) XP")
+                                                    Text("\(10 + (index % 20)) XP")
                                                         .font(.caption)
                                                         .bold()
                                                         .foregroundColor(.white).opacity(0.8)
@@ -237,12 +235,14 @@ struct GalleryView: View {
                                             }
                                             .padding(.horizontal)
 
-                                            // Dummy description
-                                            Text("This is a dummy description for image \(index + 1).")
-                                                .font(.subheadline)
-                                                .foregroundColor(.secondary)
-                                                .multilineTextAlignment(.leading)
-                                                .padding([.horizontal, .top, .bottom])
+                                            // Real description from photo - BELOW the image
+                                            if let description = photo?.description, !description.isEmpty {
+                                                Text(description)
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.secondary)
+                                                    .multilineTextAlignment(.leading)
+                                                    .padding([.horizontal, .top, .bottom])
+                                            }
                                         }
                                         .padding(.top, 8)
                                         .background(

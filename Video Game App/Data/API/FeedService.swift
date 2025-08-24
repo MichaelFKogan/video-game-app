@@ -7,6 +7,7 @@ struct Post: Codable, Identifiable {
     let id: UUID
     let user_id: UUID
     let image_url: String
+    let title: String?
     let description: String?
     let is_public: Bool
     let created_at: Date
@@ -34,6 +35,7 @@ struct Post: Codable, Identifiable {
         case user_id
         case image_url
         case storage_path
+        case title
         case description
         case is_public
         case created_at
@@ -45,6 +47,7 @@ struct Post: Codable, Identifiable {
         
         id = try container.decode(UUID.self, forKey: .id)
         user_id = try container.decode(UUID.self, forKey: .user_id)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
         description = try container.decodeIfPresent(String.self, forKey: .description)
         is_public = try container.decode(Bool.self, forKey: .is_public)
         created_at = try container.decode(Date.self, forKey: .created_at)
@@ -74,6 +77,7 @@ struct Post: Codable, Identifiable {
         try container.encode(id, forKey: .id)
         try container.encode(user_id, forKey: .user_id)
         try container.encode(image_url, forKey: .image_url)
+        try container.encodeIfPresent(title, forKey: .title)
         try container.encodeIfPresent(description, forKey: .description)
         try container.encode(is_public, forKey: .is_public)
         try container.encode(created_at, forKey: .created_at)
@@ -129,6 +133,7 @@ struct Comment: Codable, Identifiable {
 struct NewPost: Encodable {
     let user_id: UUID
     let image_url: String
+    let title: String?
     let description: String?
     let is_public: Bool
 }
@@ -357,7 +362,7 @@ class FeedService {
     }
     
     /// Creates a new post
-    func createPost(imageUrl: String, description: String?, isPublic: Bool = true) async throws -> Post {
+    func createPost(imageUrl: String, title: String?, description: String?, isPublic: Bool = true) async throws -> Post {
         guard let session = client.auth.currentSession else {
             throw NSError(domain: "FeedService", code: 401, userInfo: [
                 NSLocalizedDescriptionKey: "User not authenticated"
@@ -367,6 +372,7 @@ class FeedService {
         let newPost = NewPost(
             user_id: session.user.id,
             image_url: imageUrl,
+            title: title,
             description: description,
             is_public: isPublic
         )

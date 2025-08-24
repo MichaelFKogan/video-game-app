@@ -151,7 +151,11 @@ struct PostCardView: View {
             // Engagement
             engagementInfo
             
-            // Description
+            // Title and Description (if available) - BELOW the image
+            if let title = post.title, !title.isEmpty {
+                postTitle(title)
+            }
+            
             if let description = post.description, !description.isEmpty {
                 postDescription(description)
             }
@@ -272,13 +276,20 @@ struct PostCardView: View {
         .padding(.horizontal, 16)
     }
     
-    private func postDescription(_ description: String) -> some View {
+    private func postTitle(_ title: String) -> some View {
         HStack(alignment: .top) {
-            Text(viewModel.getDisplayName(for: post))
-                .font(.subheadline)
+            Text(title)
+                .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
             
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+    }
+    
+    private func postDescription(_ description: String) -> some View {
+        HStack(alignment: .top) {
             Text(description)
                 .font(.subheadline)
                 .foregroundColor(.primary)
