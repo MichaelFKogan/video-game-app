@@ -46,11 +46,19 @@ struct GalleryDetailView: View {
                 .padding(.horizontal)
                 
                 VStack(alignment: .leading, spacing: 16) {
-                    // Title and XP
-                    HStack {
-                        Text(displayTitle)
-                            .font(.title2)
-                            .fontWeight(.bold)
+                    
+                    
+                    HStack{
+                        // Date
+                        if let photo = photo {
+                            Text(photo.created_at, style: .date)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text(Date(), style: .date)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
                         
                         Spacer()
                         
@@ -69,22 +77,18 @@ struct GalleryDetailView: View {
                         .cornerRadius(8)
                     }
                     
-                    // Date
-                    if let photo = photo {
-                        Text(photo.created_at, style: .date)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text(Date(), style: .date)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                    // Title and XP
+                    HStack {
+                        Text(displayTitle)
+                            .font(.title2)
+                            .fontWeight(.bold)
                     }
                     
                     // Description (only show if it exists)
                     if !displayDescription.isEmpty {
                         Text(displayDescription)
                             .font(.body)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.primary).opacity(0.8)
                             .lineLimit(nil)
                     }
                     

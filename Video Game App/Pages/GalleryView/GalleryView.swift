@@ -16,31 +16,6 @@ struct GalleryView: View {
     @State private var navigateToProfile = false
     
     @State private var galleryImages: [String] = []
-
-//    func loadGalleryImages() {
-//        if let decoded = try? JSONDecoder().decode([String].self, from: savedGalleryImagesData), !decoded.isEmpty {
-//            galleryImages = decoded
-//        } else {
-//            // fallback to default images
-//            galleryImages = imageURLs
-//        }
-//    }
-//
-//    func saveGalleryImages() {
-//        if let encoded = try? JSONEncoder().encode(galleryImages) {
-//            savedGalleryImagesData = encoded
-//        }
-//    }
-
-//    func addNewImage(_ url: String) {
-//        galleryImages.insert(url, at: 0)   // Add at the beginning
-//        saveGalleryImages()                // Persist the updated array
-//    }
-    
-//    // Dummy image URLs
-//    let imageURLs: [String] = [
-//        "https://im.runware.ai/image/ws/2/ii/9139c938-47a8-4957-bffd-b9bf0289279c.jpg"
-//    ]
     
     struct GalleryImage: Identifiable, Hashable {
         let id: UUID
@@ -57,8 +32,6 @@ struct GalleryView: View {
         let screenWidth = UIScreen.main.bounds.width
         return (screenWidth - 2 * spacing) / 3
     }
-    
-//    @State private var useGhibli = false // <- Toggle state
     
     var displayedImages: [String] {
         galleryImages
@@ -142,17 +115,7 @@ struct GalleryView: View {
                                         photo: photo
                                     )
                                     .environmentObject(viewModel)) {
-                                        VStack(alignment: .leading, spacing: 4) {
-//                                            // Title above image (only show if exists)
-//                                            if let title = photo?.title, !title.isEmpty {
-//                                                Text(title)
-//                                                    .font(.caption)
-//                                                    .fontWeight(.medium)
-//                                                    .foregroundColor(.primary)
-//                                                    .lineLimit(2)
-//                                                    .multilineTextAlignment(.leading)
-//                                            }
-                                            
+                                        ZStack(alignment: .bottomLeading) {
                                             // Image
                                             CachedAsyncImage(url: URL(string: url)) { image in
                                                 image
@@ -164,6 +127,24 @@ struct GalleryView: View {
                                                 ProgressView()
                                                     .frame(width: itemWidth, height: 200)
                                             }
+
+                                            // Black gradient
+                                            LinearGradient(
+                                                colors: [Color.black.opacity(0.8), .clear],
+                                                startPoint: .bottom,
+                                                endPoint: .top
+                                            )
+                                            .frame(height: 70) // height of gradient overlay
+                                            .frame(maxWidth: .infinity, alignment: .bottom)
+                                            
+                                            // Title text
+                                            if let title = photo?.title, !title.isEmpty {
+                                                Text(title)
+                                                    .font(.caption).bold()
+                                                    .foregroundColor(.white)
+                                                    .lineLimit(2)
+                                                    .padding([.horizontal, .bottom], 6)
+                                            }
                                             
 //                                            // Description below image (only show if exists)
 //                                            if let description = photo?.description, !description.isEmpty {
@@ -173,6 +154,7 @@ struct GalleryView: View {
 //                                                    .lineLimit(2)
 //                                                    .multilineTextAlignment(.leading)
 //                                            }
+                                            
                                         }
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -182,6 +164,7 @@ struct GalleryView: View {
                             .padding(.horizontal, horizontalOuterPadding)
                             .padding(.bottom) // optional
                         } else {
+
                             LazyVStack(spacing: spacing) {
                                 // Show loading placeholders first
                                 ForEach(viewModel.loadingPhotos, id: \.self) { _ in
@@ -197,6 +180,7 @@ struct GalleryView: View {
                                     )
                                     .environmentObject(viewModel)) {
                                         VStack(alignment: .leading) {
+                                            
                                             // Real title from photo - ABOVE the image
                                             if let title = photo?.title, !title.isEmpty {
                                                 Text(title)
@@ -218,6 +202,7 @@ struct GalleryView: View {
                                                         .frame(height: 250)
                                                         .frame(maxWidth: .infinity)
                                                 }
+                                                .cornerRadius(10)
 
                                                 // XP overlay (using a simple XP value for now)
                                                 HStack(spacing: 4) {
@@ -241,8 +226,9 @@ struct GalleryView: View {
                                                     .font(.subheadline)
                                                     .foregroundColor(.secondary)
                                                     .multilineTextAlignment(.leading)
-                                                    .padding([.horizontal, .top, .bottom])
+                                                    .padding([.horizontal, .bottom])
                                             }
+                                            
                                         }
                                         .padding(.top, 8)
                                         .background(
@@ -250,7 +236,7 @@ struct GalleryView: View {
                                                 .fill(Color(.systemBackground))
                                                 .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
                                         )
-                                        .padding(.horizontal)
+//                                        .padding(.horizontal)
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                 }
@@ -258,90 +244,6 @@ struct GalleryView: View {
                             .padding(.horizontal, horizontalOuterPadding)
                             .padding(.bottom) // optional
                         }
-                        
-                        
-                        //                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 4) {
-                        //                        ForEach(viewModel.galleryImages, id: \.self) { url in
-                        //                            AsyncImage(url: URL(string: url)) { image in
-                        //                                image.resizable().scaledToFit()
-                        //                            } placeholder: {
-                        //                                ProgressView()
-                        //                            }
-                        //                        }
-                        //                    }
-                        //
-                        //                    LazyVGrid(columns: gridColumns, spacing: spacing) {
-                        //                        ForEach(displayedImages.indices, id: \.self) { index in
-                        //                            let urlString = displayedImages[index]
-                        //                            if let url = URL(string: urlString) {
-                        //                                NavigationLink {
-                        //                                    FullscreenImageView(urlString: urlString)
-                        //                                } label: {
-                        //                                    AsyncImage(url: url) { phase in
-                        //                                        switch phase {
-                        //                                        case .empty:
-                        //                                            Rectangle()
-                        //                                                .fill(Color.gray.opacity(0.3))
-                        //                                                .frame(width: itemWidth, height: 200)
-                        //                                                .overlay(ProgressView())
-                        //                                        case .success(let image):
-                        //                                            image
-                        //                                                .resizable()
-                        //                                                .scaledToFill()
-                        //                                                .frame(width: itemWidth, height: 200)
-                        //                                                .clipped()
-                        //                                                .overlay(
-                        //                                                    VStack {
-                        //                                                        if index < sampleActivities.count {
-                        //                                                            let activity = sampleActivities[index]
-                        //                                                            HStack {
-                        //                                                                Spacer()
-                        //                                                                Text("\(activity.emoji)+\(activity.xp)").opacity(0.9)
-                        //                                                                    .font(.caption2).bold()
-                        //                                                                    .foregroundColor(.white)
-                        //                                                                    .padding(6)
-                        //                                                                    .background(Color.black.opacity(0.6))
-                        //                                                                    .cornerRadius(6)
-                        //                                                            }
-                        //                                                            .padding(4)
-                        //                                                            Spacer()
-                        //                                                            LinearGradient(
-                        //                                                                gradient: Gradient(colors: [Color.black.opacity(1), Color.clear]),
-                        //                                                                startPoint: .bottom,
-                        //                                                                endPoint: .top
-                        //                                                            )
-                        //                                                            .frame(height: 40)
-                        //
-                        //                                                            .overlay(
-                        //                                                                Text(activity.title)
-                        //                                                                    .font(.caption).bold()
-                        //                                                                    .foregroundColor(.white)
-                        //                                                                    .lineLimit(2)
-                        //                                                                    .padding(4),
-                        //                                                                alignment: .bottomLeading
-                        //                                                            )
-                        //                                                        }
-                        //                                                    }
-                        //                                                )
-                        //                                        case .failure(_):
-                        //                                            Rectangle()
-                        //                                                .fill(Color.red.opacity(0.3))
-                        //                                                .frame(width: itemWidth, height: 200)
-                        //                                                .overlay(Text("Failed To Load"))
-                        //                                        @unknown default:
-                        //                                            EmptyView()
-                        //                                        }
-                        //                                    }
-                        //                                }
-                        //                                .buttonStyle(PlainButtonStyle())
-                        //                            }
-                        //                        }
-                        //                    }
-                        //                    .padding(.bottom, 200)
-                        
-                        
-                        
-                        
                     }
                     
                 }

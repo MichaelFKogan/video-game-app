@@ -163,9 +163,13 @@ struct PostCardView: View {
             // Timestamp
             timestampView
         }
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+        )
+//        .cornerRadius(12)
+//        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
 
     }
     
@@ -219,19 +223,18 @@ struct PostCardView: View {
         CachedAsyncImage(url: post.fullImageURL) { image in
             image
                 .resizable()
-                .aspectRatio(contentMode: .fit)
+                .scaledToFill()                // instead of aspectRatio(.fit)
+                .frame(height: 250)            // same height as Gallery cards
+                .frame(maxWidth: .infinity)    // span full width
+                .clipped()
+                .cornerRadius(10)              // optional for card feel
         } placeholder: {
-            Rectangle()
-                .fill(Color.gray.opacity(0.2))
-                .overlay(
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
-                )
+            ProgressView()
+                .frame(height: 250)
+                .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 400)
-        .clipped()
     }
+
     
     private var postActions: some View {
         HStack(spacing: 16) {
@@ -292,7 +295,7 @@ struct PostCardView: View {
         HStack(alignment: .top) {
             Text(description)
                 .font(.subheadline)
-                .foregroundColor(.primary)
+                .foregroundColor(.primary).opacity(0.8)
             
             Spacer()
         }
@@ -542,6 +545,7 @@ struct UserProfileView: View {
                     .aspectRatio(contentMode: .fill)
             } placeholder: {
                 Image(systemName: "person.circle.fill")
+                    .font(.system(size: 22))
                     .foregroundColor(.gray)
             }
             .frame(width: 80, height: 80)
