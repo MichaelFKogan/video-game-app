@@ -64,7 +64,7 @@ struct CameraButtonView: View {
                             Text(selectedStyle)
                                 .font(.caption)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.primary).opacity(0.8)
+                                .foregroundColor(.primary)
                         }
                         .background(Color(UIColor.systemBackground).opacity(0.9))
                         .cornerRadius(8)
@@ -340,7 +340,6 @@ struct StyleSelectionButton: View {
                     .scaledToFill()
                     .frame(width: 140, height: 130)
                     .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 // Gradient overlay for better readability
                 LinearGradient(
@@ -348,7 +347,6 @@ struct StyleSelectionButton: View {
                     startPoint: .bottom,
                     endPoint: .top
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 // Clean content layout
                 VStack(alignment: .leading, spacing: 6) {
@@ -402,10 +400,20 @@ struct StyleSelectionButton: View {
                 }
                 .padding(8)
             }
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-            .scaleEffect(isSelected ? 1.06 : 1.0)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(6)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(
+                        isSelected ? Color.accentColor : Color.gray.opacity(0.3),
+                        lineWidth: isSelected ? 3 : 1
+                    )
+            )
+            .shadow(color: isSelected ? .accentColor.opacity(0.3) : .black.opacity(0.1), radius: isSelected ? 8 : 4, x: 0, y: 2)
+//            .scaleEffect(isSelected ? 1.06 : 1.0)
             .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
+        .padding(.vertical, 2)
         .buttonStyle(PlainButtonStyle())
     }
 }
