@@ -51,54 +51,54 @@ struct GalleryView: View {
                     
                     ScrollView {
                         
-                        HStack{
-
-                            Text("📖 Storyline")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-
-                            Spacer()
-
-                            // Grid view button
-                            Button(action: {
-                                isGridView = true
-                            }) {
-                                Image(systemName: "square.grid.2x2")
-                                    .font(.title2)
-                                    .foregroundColor(isGridView ? .accentColor : .secondary)
-                            }
-
-                            // List view button
-                            Button(action: {
-                                isGridView = false
-                            }) {
-                                Image(systemName: "rectangle.stack")
-                                    .font(.title2)
-                                    .foregroundColor(!isGridView ? .accentColor : .secondary)
-                            }
-
-                        }
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .zIndex(1)
-                        
-                        VStack{
-                            Text(buildInstructionText(accentColorName: accentColorName))
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .onTapGesture {
-                                    navigateToProfile = true
-                                }
-                        }
-                        .padding(.bottom, 20)
-                        .padding(.horizontal)
-                        
-                        // Character Stats - Navigate To Character Page - Hidden NavigationLink
-                        NavigationLink(
-                            destination: CharacterProfileView(),
-                            isActive: $navigateToProfile,
-                            label: { EmptyView() }
-                        )
+//                        HStack{
+//
+//                            Text("📖 Storyline")
+//                                .font(.largeTitle)
+//                                .fontWeight(.bold)
+//
+//                            Spacer()
+//
+//                            // Grid view button
+//                            Button(action: {
+//                                isGridView = true
+//                            }) {
+//                                Image(systemName: "square.grid.2x2")
+//                                    .font(.title2)
+//                                    .foregroundColor(isGridView ? .accentColor : .secondary)
+//                            }
+//
+//                            // List view button
+//                            Button(action: {
+//                                isGridView = false
+//                            }) {
+//                                Image(systemName: "rectangle.stack")
+//                                    .font(.title2)
+//                                    .foregroundColor(!isGridView ? .accentColor : .secondary)
+//                            }
+//
+//                        }
+//                        .padding()
+//                        .background(Color(.systemBackground))
+//                        .zIndex(1)
+//                        
+//                        VStack{
+//                            Text(buildInstructionText(accentColorName: accentColorName))
+//                                .font(.subheadline)
+//                                .foregroundColor(.secondary)
+//                                .onTapGesture {
+//                                    navigateToProfile = true
+//                                }
+//                        }
+//                        .padding(.bottom, 20)
+//                        .padding(.horizontal)
+//                        
+//                        // Character Stats - Navigate To Character Page - Hidden NavigationLink
+//                        NavigationLink(
+//                            destination: CharacterProfileView(),
+//                            isActive: $navigateToProfile,
+//                            label: { EmptyView() }
+//                        )
                         
                         if isGridView {
                             LazyVGrid(columns: columns, spacing: spacing) {
