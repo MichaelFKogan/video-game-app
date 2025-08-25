@@ -23,116 +23,211 @@ struct CharacterProfileView: View {
     @State private var usernameAvailable = true
     @State private var isEditing = false
     @State private var showProfilePhotoPicker = false
+    @State private var showFullScreenPhoto = false
+    
+    @EnvironmentObject var viewModel: GalleryViewModel
+    let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
+    let spacing: CGFloat = 2
+    
+    let gridColumns = [
+        GridItem(.flexible(), spacing: 2),
+        GridItem(.flexible(), spacing: 2),
+        GridItem(.flexible(), spacing: 2)
+    ]
+    
+    var itemWidth: CGFloat {
+        let screenWidth = UIScreen.main.bounds.width
+        return (screenWidth - 2 * spacing) / 3
+    }
 
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    
-                    VStack{
-                        HStack(alignment: .top){
-                            // Profile photo with edit button
-                            ZStack(alignment: .bottomTrailing) {
-                                profileImage?
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 85, height: 85)
-                                    .foregroundColor(accentColorName.toColor())
-                                    .clipShape(Circle())
-                                    .shadow(radius: 5)
-                                
-                                // Edit button overlay
-                                Button(action: {
-                                    showProfilePhotoPicker = true
-                                }) {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(accentColorName.toColor())
-                                        .background(Color.white)
-                                        .clipShape(Circle())
-                                }
-                                .offset(x: 5, y: 5)
-                            }
-                            Spacer()
+            GeometryReader { proxy in
+                // We’ll give the grid 2pt padding on each side and subtract it from the math.
+                let columns = gridColumns
+                let horizontalOuterPadding: CGFloat = spacing // matches .padding(.horizontal, spacing)
+                let totalInteritemSpacing = spacing * CGFloat(columns.count - 1)
+                let contentWidth = proxy.size.width - (horizontalOuterPadding * 2)
+                let itemWidth = (contentWidth - totalInteritemSpacing) / CGFloat(columns.count)
+                ZStack{
+                    ScrollView {
+                        VStack(spacing: 20) {
                             
-                            
-                            NavigationLink(destination: Settings()) {
-                                Image(systemName: "gear")
-                                    .resizable()
-                                    .frame(width: 26, height: 26)
-                                //                            .foregroundColor(accentColorName.toColor())
-                                    .foregroundColor(.gray)
-                            }
-                            
-                        }
-                        .padding()
-                        
-                        // Fields
-                        Group {
-                            editableField("Username", text: $name)
-                        }
-                        
-                        
-                        if isEditing {
-                            Button(action: {
-                                restoreOriginalValues()
-                                isEditing = false
-                            }) {
-                                Text("Cancel")
-                                    .frame(maxWidth: .infinity, minHeight: 44)
-                                    .background(Color.gray)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
-                            }
-                            .padding(.horizontal)
-                        }
-                        
-                        
-                        Button(action: {
-                            if isEditing {
-                                Task {
-                                    if await isUsernameAvailable(name) {
-                                        await saveProfile()
-                                        isEditing = false
-                                    } else {
-                                        await MainActor.run { showAlert = true }
+                            VStack{
+                                HStack(alignment: .top){
+                                    // Profile photo with edit button
+                                    ZStack(alignment: .bottomTrailing) {
+                                        profileImage?
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 85, height: 85)
+                                            .foregroundColor(accentColorName.toColor())
+                                            .clipShape(Circle())
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(accentColorName.toColor(), lineWidth: 3)
+                                            )
+                                            .shadow(radius: 5)
+                                            .onTapGesture {
+                                                showFullScreenPhoto = true
+                                            }
+                                        
+                                        // Edit button overlay
+                                        Button(action: {
+                                            showProfilePhotoPicker = true
+                                        }) {
+                                            Image(systemName: "plus.circle.fill")
+                                                .font(.system(size: 24))
+                                                .foregroundColor(accentColorName.toColor())
+                                                .background(Color.white)
+                                                .clipShape(Circle())
+                                        }
+                                        .offset(x: 5, y: 5)
                                     }
+                                    Spacer()
+                                    
+                                    
+//                                    NavigationLink(destination: Settings()) {
+//                                        Image(systemName: "gear")
+//                                            .resizable()
+//                                            .frame(width: 26, height: 26)
+//                                        //                            .foregroundColor(accentColorName.toColor())
+//                                            .foregroundColor(.gray)
+//                                    }
+                                    
                                 }
-                            } else {
-                                isEditing = true
+                                .padding()
+                                
+                                // Fields
+                                Group {
+                                    editableField("Username", text: $name)
+                                }
+                                
+                                
+                                if isEditing {
+                                    Button(action: {
+                                        restoreOriginalValues()
+                                        isEditing = false
+                                    }) {
+                                        Text("Cancel")
+                                            .frame(maxWidth: .infinity, minHeight: 44)
+                                            .background(Color.gray)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(8)
+                                    }
+                                    .padding(.horizontal)
+                                }
+                                
+                                
+                                Button(action: {
+                                    if isEditing {
+                                        Task {
+                                            if await isUsernameAvailable(name) {
+                                                await saveProfile()
+                                                isEditing = false
+                                            } else {
+                                                await MainActor.run { showAlert = true }
+                                            }
+                                        }
+                                    } else {
+                                        isEditing = true
+                                    }
+                                }) {
+                                    Text(isEditing ? "Save Profile" : "Edit Profile")
+                                        .frame(maxWidth: .infinity, minHeight: 44)
+                                        .foregroundColor(.white)
+                                    //                            .background(isEditing && (name.isEmpty || !usernameAvailable) ? Color.gray : Color.blue)
+                                        .background(Color(.systemGray6))
+                                        .cornerRadius(8)
+                                }
+                                .alert("Username Taken", isPresented: $showAlert) {
+                                    Button("OK", role: .cancel) {}
+                                } message: {
+                                    Text("Please choose a different username.")
+                                }
+                                .disabled(isEditing && (name.isEmpty || !usernameAvailable))
+                                .padding(.horizontal)
+                                
+                                HStack{
+                                    Spacer()
+                                    Button("Log Out") {
+                                        Task { await session.signOut() } // no MainActor.run needed
+                                    }
+                                    .foregroundColor(.gray)
+                                }
+                                .padding(.horizontal)
                             }
-                        }) {
-                            Text(isEditing ? "Save Profile" : "Edit Profile")
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .foregroundColor(.white)
-                            //                            .background(isEditing && (name.isEmpty || !usernameAvailable) ? Color.gray : Color.blue)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
+                            
+                            LazyVGrid(columns: columns, spacing: spacing) {
+                                // Show loading placeholders first
+                                ForEach(viewModel.loadingPhotos, id: \.self) { _ in
+                                    LoadingPhotoPlaceholder(width: itemWidth, height: 200)
+                                }
+                                
+                                // Show actual images with titles and descriptions
+                                ForEach(Array(viewModel.galleryImages.enumerated()), id: \.element) { index, url in
+                                    let photo = viewModel.getPhoto(for: url)
+                                    NavigationLink(destination: GalleryDetailView(
+                                        imageURL: url,
+                                        photo: photo
+                                    )
+                                        .environmentObject(viewModel)) {
+                                            ZStack(alignment: .bottomLeading) {
+                                                // Image
+                                                CachedAsyncImage(url: URL(string: url)) { image in
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: itemWidth, height: 200)
+                                                        .clipped()
+                                                } placeholder: {
+                                                    ProgressView()
+                                                        .frame(width: itemWidth, height: 200)
+                                                }
+                                                
+                                                // Black gradient
+                                                LinearGradient(
+                                                    colors: [Color.black.opacity(0.8), .clear],
+                                                    startPoint: .bottom,
+                                                    endPoint: .top
+                                                )
+                                                .frame(height: 70) // height of gradient overlay
+                                                .frame(maxWidth: .infinity, alignment: .bottom)
+                                                
+                                                // Title text
+                                                if let title = photo?.title, !title.isEmpty {
+                                                    Text(title)
+                                                        .font(.caption).bold()
+                                                        .foregroundColor(.white)
+                                                        .lineLimit(2)
+                                                        .padding([.horizontal, .bottom], 6)
+                                                }
+                                                
+                                                //                                            // Description below image (only show if exists)
+                                                //                                            if let description = photo?.description, !description.isEmpty {
+                                                //                                                Text(description)
+                                                //                                                    .font(.caption2)
+                                                //                                                    .foregroundColor(.secondary)
+                                                //                                                    .lineLimit(2)
+                                                //                                                    .multilineTextAlignment(.leading)
+                                                //                                            }
+                                                
+                                            }
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            // Use horizontal padding equal to `spacing` so the math lines up
+                            .padding(.horizontal, horizontalOuterPadding)
+                            .padding(.bottom) // optional
+                            
+                            // Dummy stats for now
+                            PlayerStatsView(level: 1)
+                            
                         }
-                        .alert("Username Taken", isPresented: $showAlert) {
-                            Button("OK", role: .cancel) {}
-                        } message: {
-                            Text("Please choose a different username.")
-                        }
-                        .disabled(isEditing && (name.isEmpty || !usernameAvailable))
-                        .padding(.horizontal)
                         
-                        HStack{
-                            Spacer()
-                            Button("Log Out") {
-                                Task { await session.signOut() } // no MainActor.run needed
-                            }
-                            .foregroundColor(.gray)
-                        }
-                        .padding(.horizontal)
                     }
-                    
-                    
-                    // Dummy stats for now
-                    PlayerStatsView(level: 1)
-                    
                 }
-                
             }
         }
         .navigationTitle("Character Profile")
@@ -147,6 +242,9 @@ struct CharacterProfileView: View {
                     await loadProfileImage(from: imageURL)
                 }
             }
+        }
+        .fullScreenCover(isPresented: $showFullScreenPhoto) {
+            FullScreenPhotoView(image: profileImage, accentColor: accentColorName.toColor())
         }
 
     }
@@ -333,4 +431,47 @@ struct CharacterProfileView: View {
 
 
 
+}
+
+// MARK: - Full Screen Photo View
+struct FullScreenPhotoView: View {
+    let image: Image?
+    let accentColor: Color
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        ZStack {
+            Color.black
+                .ignoresSafeArea()
+            
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 30))
+                            .foregroundColor(.white)
+                    }
+                    .padding()
+                }
+                
+                Spacer()
+                
+                image?
+                    .resizable()
+                    .scaledToFit()
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(accentColor, lineWidth: 4)
+                    )
+                    .shadow(radius: 10)
+                    .padding()
+                
+                Spacer()
+            }
+        }
+    }
 }

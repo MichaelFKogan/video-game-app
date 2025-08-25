@@ -7,6 +7,7 @@ struct FeedView: View {
     @State private var selectedPost: Post?
     @State private var showingUserProfile = false
     @State private var selectedUsername: String?
+    @AppStorage("accentColorName") private var accentColorName: String = "blue"
     
     init(client: SupabaseClient) {
         _viewModel = StateObject(wrappedValue: FeedViewModel(client: client))
@@ -40,13 +41,22 @@ struct FeedView: View {
             .sheet(isPresented: $showingComments) {
                 if let post = selectedPost {
                     CommentsView(post: post, client: SupabaseManager.shared.client)
+                        .presentationDetents([.medium, .large])
+                        .presentationDragIndicator(.visible)
                 }
             }
-            .sheet(isPresented: $showingUserProfile) {
-                if let username = selectedUsername {
-                    UserProfileView(username: username, client: SupabaseManager.shared.client)
+            .background(
+                NavigationLink(
+                    destination: Group {
+                        if let username = selectedUsername {
+                            UserProfileView(username: username, client: SupabaseManager.shared.client)
+                        }
+                    },
+                    isActive: $showingUserProfile
+                ) {
+                    EmptyView()
                 }
-            }
+            )
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {
                     viewModel.errorMessage = nil
@@ -131,6 +141,8 @@ struct FeedView: View {
 // MARK: - Post Card View
 
 struct PostCardView: View {
+    @AppStorage("accentColorName") private var accentColorName: String = "blue"
+    
     let post: Post
     let viewModel: FeedViewModel
     let onLikeTapped: () -> Void
@@ -138,7 +150,7 @@ struct PostCardView: View {
     let onUsernameTapped: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             // Header
             postHeader
             
@@ -148,8 +160,8 @@ struct PostCardView: View {
             // Actions
             postActions
             
-            // Engagement
-            engagementInfo
+//            // Engagement
+//            engagementInfo
             
             // Title and Description (if available) - BELOW the image
             if let title = post.title, !title.isEmpty {
@@ -159,35 +171,38 @@ struct PostCardView: View {
             if let description = post.description, !description.isEmpty {
                 postDescription(description)
             }
-            
-            // Timestamp
-            timestampView
         }
         .background(
             RoundedRectangle(cornerRadius: 10)
                 .fill(Color(.systemBackground))
                 .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
         )
-//        .cornerRadius(12)
-//        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
 
     }
     
     private var postHeader: some View {
         HStack {
             // User Avatar
-            CachedAsyncImage(url: viewModel.getAvatarURL(for: post)) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .scaledToFill()
-                    .foregroundColor(.gray)
+            Button(action: onUsernameTapped) {
+                CachedAsyncImage(url: viewModel.getAvatarURL(for: post)) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Image(systemName: "person.circle.fill")
+                        .resizable()
+                        .scaledToFill()
+                        .foregroundColor(.gray)
+                }
+                .frame(width: 50, height: 50)
+                .clipShape(Circle())
+                .overlay(
+                    Circle()
+                        .stroke(accentColorName.toColor(), lineWidth: 2)
+                )
+                .padding(2)
             }
-            .frame(width: 50, height: 50)
-            .clipShape(Circle())
+            .buttonStyle(PlainButtonStyle())
             
             VStack(alignment: .leading, spacing: 2) {
                 Button(action: onUsernameTapped) {
@@ -217,25 +232,30 @@ struct PostCardView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
+        .padding(.top, 18)
     }
     
     private var postImage: some View {
-        CachedAsyncImage(url: post.fullImageURL) { image in
-            image
-                .resizable()
-                .scaledToFill()                // instead of aspectRatio(.fit)
-                .frame(height: 250)            // same height as Gallery cards
-                .frame(maxWidth: .infinity)    // span full width
-                .clipped()
-                .cornerRadius(10)              // optional for card feel
-        } placeholder: {
-            ProgressView()
-                .frame(height: 250)
-                .frame(maxWidth: .infinity)
+        NavigationLink {
+            FeedDetailView(post: post, viewModel: viewModel)
+        } label: {
+            CachedAsyncImage(url: post.fullImageURL) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 250)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .cornerRadius(10)
+            } placeholder: {
+                ProgressView()
+                    .frame(height: 250)
+                    .frame(maxWidth: .infinity)
+            }
         }
+        .buttonStyle(.plain)
     }
+
 
     
     private var postActions: some View {
@@ -282,27 +302,41 @@ struct PostCardView: View {
     }
     
     private func postTitle(_ title: String) -> some View {
-        HStack(alignment: .top) {
-            Text(title)
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-            
-            Spacer()
+        NavigationLink {
+            FeedDetailView(post: post, viewModel: viewModel)
+        } label: {
+            HStack(alignment: .top) {
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, minHeight: 30)
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
         }
-        .padding(.horizontal, 16)
+        .buttonStyle(.plain)
     }
+
     
     private func postDescription(_ description: String) -> some View {
-        HStack(alignment: .top) {
-            Text(description)
-                .font(.subheadline)
-                .foregroundColor(.primary).opacity(0.8)
-            
-            Spacer()
+        NavigationLink {
+            FeedDetailView(post: post, viewModel: viewModel)
+        } label: {
+            HStack(alignment: .top) {
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.primary).opacity(0.8)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, minHeight: 20)
+            .padding(.horizontal, 16)
+            .padding(.top, 2)
         }
-        .padding(.horizontal, 16)
+        .buttonStyle(.plain)
     }
+
     
     private var timestampView: some View {
         Text(viewModel.formatTimeAgo(for: post))
@@ -332,26 +366,37 @@ struct CommentsView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
-            VStack {
-                if commentsViewModel.comments.isEmpty && !commentsViewModel.isLoading {
-                    emptyCommentsView
-                } else {
-                    commentsList
-                }
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Comments")
+                    .font(.headline)
+                    .fontWeight(.semibold)
                 
-                commentInputView
-            }
-            .navigationTitle("Comments")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") {
-                        dismiss()
-                    }
+                Spacer()
+                
+                Button("Done") {
+                    dismiss()
                 }
+                .font(.subheadline)
+                .foregroundColor(.blue)
             }
+            .padding()
+            .background(Color(.systemBackground))
+            
+            Divider()
+            
+            // Content
+            if commentsViewModel.comments.isEmpty && !commentsViewModel.isLoading {
+                emptyCommentsView
+            } else {
+                commentsList
+            }
+            
+            Divider()
+            
+            // Input
+            commentInputView
         }
         .task {
             await commentsViewModel.loadComments(for: post.id, client: client)
@@ -413,6 +458,7 @@ struct CommentsView: View {
 
 struct CommentRowView: View {
     let comment: Comment
+    @AppStorage("accentColorName") private var accentColorName: String = "blue"
     
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -426,6 +472,11 @@ struct CommentRowView: View {
             }
             .frame(width: 32, height: 32)
             .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(accentColorName.toColor(), lineWidth: 1.5)
+            )
+            .padding(1.5)
             
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
@@ -505,6 +556,7 @@ struct UserProfileView: View {
     
     @StateObject private var profileViewModel = UserProfileViewModel()
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("accentColorName") private var accentColorName: String = "blue"
     
     var body: some View {
         NavigationView {
@@ -553,6 +605,11 @@ struct UserProfileView: View {
             }
             .frame(width: 80, height: 80)
             .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(accentColorName.toColor(), lineWidth: 3)
+            )
+            .padding(3)
             
             VStack(spacing: 4) {
                 Text(profile.display_name ?? profile.username ?? "Unknown User")
@@ -568,6 +625,7 @@ struct UserProfileView: View {
             
             if let bio = profile.bio, !bio.isEmpty {
                 Text(bio)
+                Text("User bio here?")
                     .font(.body)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)

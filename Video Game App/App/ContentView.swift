@@ -45,19 +45,23 @@ struct ContentView: View {
                     .tabItem {Label("Home", systemImage: "house")}
                     .tag(0)
                 
+                    FeedGridView(client: SupabaseManager.shared.client)
+                    .tabItem {Label("Feed", systemImage: "photo.on.rectangle")}
+                    .tag(1)
+                
 //            // 🐛 Debug Tab (temporary)
 //                DebugFeedTest()
 //                    .tabItem {Label("Debug", systemImage: "ladybug")}
 //                    .tag(5)
                 
-            // 📓 Daily Entries
-                AuthGuard {
-//                    DailyEntries()
-                    GalleryView()
-                        .environmentObject(galleryViewModel)
-                }
-                    .tabItem {Label("Photos", systemImage: "photo.on.rectangle")}
-                    .tag(1)
+//            // 📓 Daily Entries
+//                AuthGuard {
+////                    DailyEntries()
+//                    GalleryView()
+//                        .environmentObject(galleryViewModel)
+//                }
+//                    .tabItem {Label("Photos", systemImage: "photo.on.rectangle")}
+//                    .tag(2)
                 
             // 📷 Camera
                 AuthGuard {
@@ -67,31 +71,32 @@ struct ContentView: View {
                 }
                 .environmentObject(session)
                     .tabItem { Label("Camera", systemImage: "camera") }
-                    .tag(3)
-                
-            // 🛠️ Quests Tab
-                AuthGuard {
-                    QuestView()
-                }
-                    .tabItem {Label("Side Quests", systemImage: "scroll")}
                     .tag(2)
+                
+//            // 🛠️ Quests Tab
+//                AuthGuard {
+//                    QuestView()
+//                }
+//                    .tabItem {Label("Side Quests", systemImage: "scroll")}
+//                    .tag(4)
                 
             // 👤 Character
                 AuthGuard {
                     CharacterProfileView()
+                        .environmentObject(galleryViewModel)
                 }
                     .tabItem {
                         Label("Character", systemImage: "person.crop.circle")
                     }
-                    .tag(4)
+                    .tag(3)
                 
-//            // ⚙️ Settings
-//                    Settings()
-//                
-//                    .tabItem {
-//                        Label("Settings", systemImage: "gear")
-//                    }
-//                    .tag(4)
+            // ⚙️ Settings
+                    Settings()
+                
+                    .tabItem {
+                        Label("Settings", systemImage: "gear")
+                    }
+                    .tag(4)
                 
             }
             .environmentObject(session)
